@@ -1,4 +1,4 @@
-namespace ConsoleWall_e.Tokens;
+namespace ConsoleWall_e.Core.Tokens;
 
 public enum TokenType
 {

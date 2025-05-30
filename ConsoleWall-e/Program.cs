@@ -1,6 +1,6 @@
-﻿using ConsoleWall_e.Errors;
-using ConsoleWall_e.Lexing;
-using ConsoleWall_e.Tokens;
+﻿using ConsoleWall_e.Core.Errors;
+using ConsoleWall_e.Core.Lexing;
+using ConsoleWall_e.Core.Tokens;
 
 namespace ConsoleWall_e;
 

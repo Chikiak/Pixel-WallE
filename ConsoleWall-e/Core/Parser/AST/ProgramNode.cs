@@ -1,0 +1,13 @@
+using ConsoleWall_e.Core.Parser.AST.Stmts;
+
+namespace ConsoleWall_e.Core.Parser.AST;
+
+public class ProgramStmt(List<Stmt> statements, CodeLocation location) : ASTNode(location)
+{
+    public List<Stmt> Statements { get; private set; } = statements;
+
+    public override T Accept<T>(IVisitor<T> visitor)
+    {
+        return visitor.VisitProgramStmt(this);
+    }
+}

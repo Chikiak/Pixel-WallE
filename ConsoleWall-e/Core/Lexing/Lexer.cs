@@ -1,7 +1,7 @@
-using ConsoleWall_e.Tokens;
 using System.Globalization;
+using ConsoleWall_e.Core.Tokens;
 
-namespace ConsoleWall_e.Lexing;
+namespace ConsoleWall_e.Core.Lexing;
 
 public class Lexer
 {
@@ -26,13 +26,6 @@ public class Lexer
             { "DrawCircle", TokenType.DrawCircle },
             { "DrawRectangle", TokenType.DrawRectangle },
             { "Fill", TokenType.Fill },
-            { "GetActualX", TokenType.GetActualX },
-            { "GetActualY", TokenType.GetActualY },
-            { "GetCanvasSize", TokenType.GetCanvasSize },
-            { "GetColorCount", TokenType.GetColorCount },
-            { "IsBrushColor", TokenType.IsBrushColor },
-            { "IsBrushSize", TokenType.IsBrushSize },
-            { "IsCanvasColor", TokenType.IsCanvasColor },
             { "and", TokenType.And },
             { "or", TokenType.Or },
             { "true", TokenType.True },
@@ -214,7 +207,7 @@ public class Lexer
     }
     private bool IsAlphaNumericOrDash(char c)
     {
-        return IsAlpha(c) || IsDigit(c) || c == '-';
+        return IsAlpha(c) || IsDigit(c) || c == '_';
     }
     private bool IsDigit(char c)
     {

@@ -1,4 +1,4 @@
-namespace ConsoleWall_e.Errors;
+namespace ConsoleWall_e.Core.Errors;
 
 public abstract class Error
 {
