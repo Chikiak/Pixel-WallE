@@ -54,21 +54,8 @@ static class Program
     private static void Run(string code)
     {
         var lexer = new Lexer(code);
-        List<Token> tokens = lexer.ScanTokens();
-
-        if (Errors.Count > 0)
-        {
-            Console.WriteLine($"Se encontraron {Errors.Count} errores:");
-            foreach (var error in Errors)
-            {
-                Console.WriteLine(error.ToString());
-            }
-            return;
-        }
-
-        foreach (var token in tokens)
-        {
-            Console.WriteLine(token.ToString());
-        }
+        //List<Token> tokens = lexer.ScanTokens();
+        var tokens = lexer.ScanTokens();
+        
     }
 }

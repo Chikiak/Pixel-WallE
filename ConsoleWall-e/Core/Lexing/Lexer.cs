@@ -1,19 +1,26 @@
 using System.Globalization;
+using ConsoleWall_e.Core.Common;
+using ConsoleWall_e.Core.Errors;
 using ConsoleWall_e.Core.Tokens;
 
 namespace ConsoleWall_e.Core.Lexing;
 
-public class Lexer
+public class Lexer : ILexer
 {
-    private string _source;
-    private List<Token> _tokens = [];
+    private readonly string _source;
+    private readonly List<Token> _tokens;
+    private readonly List<Error> _errors;
+    
     private int _start = 0;
     private int _current = 0;
     private int _line = 1;
     private int _column = 1; // Columna actual en la línea
     private int _startColumn = 1; // Columna donde inicia el token actual
-    
-    private static Dictionary<string, TokenType> Keywords;
+
+    private CodeLocation CurrentLocation => new(_line, _column);
+    private CodeLocation TokenLocation => new(_line, _startColumn);
+
+    private static readonly IReadOnlyDictionary<string, TokenType> Keywords;
     
     static Lexer()
     {
@@ -33,22 +40,44 @@ public class Lexer
             { "GoTo", TokenType.GoTo }
         };
     }
-    public Lexer(string code)
+
+    public Lexer(string source)
     {
-        _source = code;
+        _source = source ?? throw new ArgumentNullException(nameof(source));
+        _tokens = new List<Token>();
+        _errors = new List<Error>();
+        _line = 1;
+        _column = 1;
     }
 
-    public List<Token> ScanTokens()
+    public Result<IReadOnlyList<Token>> ScanTokens()
     {
-        while (!IsAtEnd())
+        try
         {
-            _start = _current;
-            _startColumn = _column; // Guardar la columna de inicio del token
-            ScanToken();
-        }
+            while (!IsAtEnd())
+            {
+                BeginToken();
+                ScanToken();
+            }
 
-        _tokens.Add(new Token(TokenType.EOF, "", null, _line, _column));
-        return _tokens;
+            // Agregar token EOF
+            _tokens.Add(TokenFactory.CreateEOF(CurrentLocation));
+
+            return _errors.Any()
+                ? Result<IReadOnlyList<Token>>.Failure(_errors)
+                : Result<IReadOnlyList<Token>>.Success(_tokens.AsReadOnly());
+        }
+        catch (Exception ex)
+        {
+            var error = new LexicalError(CurrentLocation, $"Error inesperado en el lexer: {ex.Message}");
+            return Result<IReadOnlyList<Token>>.Failure(error);
+        }
+    }
+
+    private void BeginToken()
+    {
+        _start = _current;
+        _startColumn = _column;
     }
 
     private void ScanToken()
@@ -57,22 +86,22 @@ public class Lexer
         switch (c)
         {
             case '#':
-                while (Peek() != '\n' && !IsAtEnd()) Advance();
+                ScanComment();
                 break;
             case '\n':
                 AddToken(TokenType.Endl);
-                _line++;
-                _column = 1;
+                AddToken(TokenType.Endl);
+                NewLine();
                 break;
             case '(': AddToken(TokenType.LeftParen); break;
             case ')': AddToken(TokenType.RightParen); break;
+            case '[': AddToken(TokenType.LeftBracket); break;
+            case ']': AddToken(TokenType.RightBracket); break;
             case ',': AddToken(TokenType.Comma); break;
             case '-': AddToken(TokenType.Minus); break;
             case '+': AddToken(TokenType.Plus); break;
             case '/': AddToken(TokenType.Slash); break;
             case '%': AddToken(TokenType.Modulo); break;
-            case '[': AddToken(TokenType.LeftBracket); break;
-            case ']': AddToken(TokenType.RightBracket); break;
             case '*': 
                 AddToken(Match('*') ? TokenType.Power : TokenType.Star);
                 break;
@@ -86,27 +115,16 @@ public class Lexer
                 AddToken(Match('=') ? TokenType.GreaterEqual : TokenType.Greater);;
                 break;
             case '<':
-                if (Peek() == '=')
-                {
-                    Advance();
-                    AddToken(TokenType.LessEqual);
-                }
-                else if (Peek() == '-')
-                {
-                    Advance();
-                    AddToken(TokenType.Assign);
-                }
-                else
-                {
-                    AddToken(TokenType.Less);
-                }
+                ScanLessOrAssign();
                 break;
             // Ignorar espacios en blanco
             case ' ':
             case '\r':
             case '\t':
                 break;
-            case '"': ScanString(); break;
+            case '"':
+                ScanString();
+                break;
             default:
                 if (IsDigit(c))
                 {
@@ -118,26 +136,42 @@ public class Lexer
                 }
                 else
                 {
-                    //ToDo
-                    //Error(_line, _startColumn, $"Carácter inesperado: {c}");
+                    AddError($"Unexpected character: {c}");
                 }
                 break;
         }
     }
+
+    private void ScanLessOrAssign()
+    {
+        if (Match('='))
+            AddToken(TokenType.LessEqual);
+        else if (Match('-'))
+            AddToken(TokenType.Assign);
+        else
+            AddToken(TokenType.Less);
+    }
+
+
+    private void ScanComment()
+    {
+        while (Peek() != '\n' && !IsAtEnd()) Advance();
+    }
+
     private void ScanIdentifier()
     {
         while (IsAlphaNumericOrDash(Peek())) Advance();
 
-        string text = _source.Substring(_start, _current - _start);
-        if (Keywords.TryGetValue(text, out TokenType type))
-        {
-            AddToken(type);
-        }
-        else
-        {
-            AddToken(TokenType.Identifier);
-        }
+        var text = GetCurrentTokenText();
+        var type = Keywords.GetValueOrDefault(text, TokenType.Identifier);
     }
+
+
+    private string GetCurrentTokenText()
+    {
+        return _source.Substring(_start, _current - _start);
+    }
+
     private void ScanNumber()
     {
         while (IsDigit(Peek())) Advance();
@@ -148,8 +182,7 @@ public class Lexer
         }
         else
         {
-            // ToDo
-            // Error(_line, _startColumn, $"Número inválido: {numberString}");
+            AddError($"Número inválido: {numberString}");
         }
     }
     private void ScanString()
@@ -167,8 +200,7 @@ public class Lexer
 
         if (IsAtEnd())
         {
-            // ToDo
-            // Error(_line, _startColumn, "String sin terminar.");
+            AddError($"Unfinished string");
             return;
         }
 
@@ -176,6 +208,12 @@ public class Lexer
 
         string value = _source.Substring(_start + 1, _current - _start - 2);
         AddToken(TokenType.String, value);
+    }
+
+    private void NewLine()
+    {
+        _line++;
+        _column = 1;
     }
     private char Peek()
     {
@@ -216,5 +254,10 @@ public class Lexer
     private bool IsAtEnd()
     {
         return _current >= _source.Length;
+    }
+
+    private void AddError(string message)
+    {
+        _errors.Add(new LexicalError(TokenLocation, message));
     }
 }
