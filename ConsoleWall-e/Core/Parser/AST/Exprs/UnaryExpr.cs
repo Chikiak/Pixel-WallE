@@ -1,3 +1,5 @@
+using ConsoleWall_e.Core.Common;
+
 namespace ConsoleWall_e.Core.Parser.AST.Exprs;
 
 public abstract class UnaryExpr(Expr right, CodeLocation location) : Expr(location)

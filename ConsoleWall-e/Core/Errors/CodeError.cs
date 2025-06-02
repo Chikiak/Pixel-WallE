@@ -1,12 +1,13 @@
+using ConsoleWall_e.Core.Common;
+
 namespace ConsoleWall_e.Core.Errors;
 
-public class CodeError(int line, int column, string message) : Error(message)
+public class CodeError(ErrorType type, CodeLocation location, string message) : Error(type, message)
 {
-    public int Line { get; } = line;
-    public int Column { get; } = column;
+    public CodeLocation Location { get; } = location;
 
     public override string ToString()
     {
-        return $"[linea {Line}, col {Column}] Error: {Message}";
+        return $"[línea {Location.Line}, col {Location.Column}] {Type} Error: {Message}";
     }
 }

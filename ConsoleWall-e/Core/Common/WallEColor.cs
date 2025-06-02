@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace ConsoleWall_e.Core;
+namespace ConsoleWall_e.Core.Common;
 
 public readonly struct WallEColor(byte red, byte green, byte blue, byte alpha = 255)
 {

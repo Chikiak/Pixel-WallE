@@ -1,3 +1,5 @@
+using ConsoleWall_e.Core.Common;
+
 namespace ConsoleWall_e.Core.Tokens;
 
 public class Token
