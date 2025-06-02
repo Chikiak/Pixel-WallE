@@ -54,7 +54,6 @@ static class Program
     private static void Run(string code)
     {
         var lexer = new Lexer(code);
-        //List<Token> tokens = lexer.ScanTokens();
         var tokens = lexer.ScanTokens();
         
     }
