@@ -164,6 +164,7 @@ public class Lexer : ILexer
 
         var text = GetCurrentTokenText();
         var type = Keywords.GetValueOrDefault(text, TokenType.Identifier);
+        AddToken(type);
     }
 
 
