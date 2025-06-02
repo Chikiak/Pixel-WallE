@@ -249,27 +249,28 @@ public class Parser : IParser
         return ParseLogicalOr();
     }
 
-    private Expr ParseLogicalOr()
+    // Or has more precedence
+    private Expr ParseLogicalAnd()
     {
-        var expr = ParseLogicalAnd();
+        var expr = ParseLogicalOr();
 
-        while (Match(TokenType.Or))
+        while (Match(TokenType.And))
         {
-            var right = ParseLogicalAnd();
-            expr = new OrExpr(expr, right, expr.Location);
+            var right = ParseLogicalOr();
+            expr = new AndExpr(expr, right, expr.Location);
         }
 
         return expr;
     }
 
-    private Expr ParseLogicalAnd()
+    private Expr ParseLogicalOr()
     {
         var expr = ParseEquality();
 
-        while (Match(TokenType.And))
+        while (Match(TokenType.Or))
         {
             var right = ParseEquality();
-            expr = new AndExpr(expr, right, expr.Location);
+            expr = new OrExpr(expr, right, expr.Location);
         }
 
         return expr;
@@ -427,21 +428,21 @@ public class Parser : IParser
     {
         var expr = ParsePrimary();
 
-        if (Check(TokenType.LeftParen))
-            if (expr is VariableExpr varExpr)
-            {
-                Advance(); // Consume '('
-                var args = new List<Expr>();
+        if (!Check(TokenType.LeftParen)) return expr;
+        if (expr is VariableExpr varExpr)
+        {
+            Advance(); // Consume '('
+            var args = new List<Expr>();
 
-                if (!Check(TokenType.RightParen))
-                    do
-                    {
-                        args.Add(ParseExpression());
-                    } while (Match(TokenType.Comma));
+            if (!Check(TokenType.RightParen))
+                do
+                {
+                    args.Add(ParseExpression());
+                } while (Match(TokenType.Comma));
 
-                Consume(TokenType.RightParen, "Se esperaba ')' después de los argumentos");
-                return new CallExpr(varExpr.Name, args, varExpr.Location);
-            }
+            Consume(TokenType.RightParen, "Se esperaba ')' después de los argumentos");
+            return new CallExpr(varExpr.Name, args, varExpr.Location);
+        }
 
         return expr;
     }
