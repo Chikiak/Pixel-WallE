@@ -1,7 +1,7 @@
 namespace ConsoleWall_e.Core;
 
-public class CodeLocation
+public readonly struct CodeLocation(int line, int column)
 {
-    public int Line;
-    public int Column;
+    public int Line { get; } = line;
+    public int Column { get; } = column;
 }

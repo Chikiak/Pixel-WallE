@@ -12,9 +12,7 @@ public class Token
         Type = type;
         Lexeme = lexeme;
         Literal = literal;
-        Location = new CodeLocation();
-        Location.Line = line;
-        Location.Column = column;
+        Location = new CodeLocation(line, column);
     }
 
     public override string ToString()

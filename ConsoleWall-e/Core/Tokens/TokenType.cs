@@ -22,10 +22,6 @@ public enum TokenType
     //Comandos
     Spawn, Color, Size, DrawLine, DrawCircle, DrawRectangle, Fill,
     
-    // Funciones
-    GetActualX, GetActualY, GetCanvasSize, GetColorCount,
-    IsBrushColor, IsBrushSize, IsCanvasColor,
-    
     //Palabras Clave
     And, Or, True, False, GoTo, Endl,
     

@@ -1,18 +1,14 @@
 namespace ConsoleWall_e.Core.Errors;
 
-public abstract class Error
+public abstract class Error(string message)
 {
-    public string Message { get; protected set; }
-    
+    public string Message { get; } = message;
+
     public abstract override string ToString();
 }
 
-public class ImportError : Error
+public class ImportError(string message) : Error(message)
 {
-    public ImportError(string message)
-    {
-        Message = message;
-    }
     public override string ToString()
     {
         return $"Error: {Message}";
