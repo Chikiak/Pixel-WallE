@@ -90,7 +90,6 @@ public class Lexer : ILexer
                 break;
             case '\n':
                 AddToken(TokenType.Endl);
-                AddToken(TokenType.Endl);
                 NewLine();
                 break;
             case '(': AddToken(TokenType.LeftParen); break;
