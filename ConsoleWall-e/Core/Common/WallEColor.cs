@@ -60,13 +60,13 @@ public readonly struct WallEColor(byte red, byte green, byte blue, byte alpha = 
                 return TryParseHexPacked(expandedHex, out color);
             }
 
-            if (hex.Length == 6) // #RRGGBB
+            if (hex.Length == 6) // #RRGGBB -> #AARRGGBB
             {
                 var expandedHex = $"ff{hex}";
                 return TryParseHexPacked(expandedHex, out color);
             }
 
-            if (hex.Length == 3) // #RGB -> #RRGGBB
+            if (hex.Length == 3) // #RGB -> #AARRGGBB
             {
                 var expandedHex = $"ff{hex[0]}{hex[0]}{hex[1]}{hex[1]}{hex[2]}{hex[2]}";
                 return TryParseHexPacked(expandedHex, out color);

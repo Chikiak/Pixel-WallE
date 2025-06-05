@@ -20,7 +20,7 @@ DrawCircle(0, 1, 10) # Círculo hacia abajo, radio 10
 # var centroY <- miPosicionY + 10 + 10 // Asumiendo que DrawCircle actualiza la posición
 
 # Definir una etiqueta
-loop-principal
+loop_principal
 
 condicionBooleana <- iterador < 5
 esColorPincelRojo <- IsBrushColor("Red")
@@ -29,7 +29,7 @@ esColorPincelRojo <- IsBrushColor("Red")
 DrawRectangle(1,1, 5, 4, 2)
 
 # Salto condicional
-GoTo [loop-principal] (condicionBooleana == true and esColorPincelRojo == false)
+GoTo [loop] (true)
 
 iterador <- iterador + 1
 

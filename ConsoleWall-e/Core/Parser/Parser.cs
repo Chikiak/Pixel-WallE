@@ -33,12 +33,11 @@ public class Parser : IParser
             try
             {
                 var stmt = ParseStmt();
-                if (stmt != null)
-                    statements.Add(stmt);
+                statements.Add(stmt);
             }
             catch (SyntaxException ex)
             {
-                AddError($"Error inesperado al parsear: {ex.Message}");
+                AddError($"{ex.Message}");
                 Synchronize();
             }
         }
@@ -52,36 +51,27 @@ public class Parser : IParser
         return Result<ProgramStmt>.Success(new ProgramStmt(statements, programLocation));
     }
 
-    private Stmt? ParseStmt()
+    private Stmt ParseStmt()
     {
-        try
-        {
-            // Comandos de dibujo
-            if (Match(TokenType.Spawn)) return ParseSpawnStmt();
-            if (Match(TokenType.Color)) return ParseColorStmt();
-            if (Match(TokenType.Size)) return ParseSizeStmt();
-            if (Match(TokenType.DrawLine)) return ParseDrawLineStmt();
-            if (Match(TokenType.DrawCircle)) return ParseDrawCircleStmt();
-            if (Match(TokenType.DrawRectangle)) return ParseDrawRectangleStmt();
-            if (Match(TokenType.Fill)) return ParseFillStmt();
-            if (Match(TokenType.GoTo)) return ParseGoToStmt();
+        // Comandos de dibujo
+        if (Match(TokenType.Spawn)) return ParseSpawnStmt();
+        if (Match(TokenType.Color)) return ParseColorStmt();
+        if (Match(TokenType.Size)) return ParseSizeStmt();
+        if (Match(TokenType.DrawLine)) return ParseDrawLineStmt();
+        if (Match(TokenType.DrawCircle)) return ParseDrawCircleStmt();
+        if (Match(TokenType.DrawRectangle)) return ParseDrawRectangleStmt();
+        if (Match(TokenType.Fill)) return ParseFillStmt();
+        if (Match(TokenType.GoTo)) return ParseGoToStmt();
 
-            // Asignación
-            if (Check(TokenType.Identifier) && CheckNext(TokenType.Assign))
-                return ParseAssignStmt();
+        // Asignación
+        if (Check(TokenType.Identifier) && CheckNext(TokenType.Assign))
+            return ParseAssignStmt();
 
-            // Etiquetas (identificadores seguidos de nueva línea o EOF)
-            if (Check(TokenType.Identifier) && (CheckNext(TokenType.Endl) || CheckNext(TokenType.EOF)))
-                return ParseLabelStmt();
-
-            // Expresión como statement
-            return ParseExpressionStmt();
-        }
-        catch (SyntaxException ex)
-        {
-            AddError($"Error al parsear statement: {ex.Message}");
-            return null;
-        }
+        // Etiquetas (identificadores seguidos de nueva línea o EOF)
+        if (Check(TokenType.Identifier) && (CheckNext(TokenType.Endl) || CheckNext(TokenType.EOF)))
+            return ParseLabelStmt();
+        // Expresión como statement
+        return ParseExpressionStmt();
     }
 
     #region Statement Parsers
@@ -246,7 +236,7 @@ public class Parser : IParser
 
     private Expr ParseExpression()
     {
-        return ParseLogicalOr();
+        return ParseLogicalAnd();
     }
 
     // Or has more precedence
@@ -294,7 +284,6 @@ public class Parser : IParser
                     expr = new EqualEqualExpr(expr, right, expr.Location);
                     break;
                 default:
-                    AddError($"Operador de igualdad no reconocido: {op.Type}");
                     throw new SyntaxException($"Operador de igualdad no reconocido: {op.Type}");
             }
         }
@@ -326,7 +315,6 @@ public class Parser : IParser
                     expr = new LessEqualExpr(expr, right, expr.Location);
                     break;
                 default:
-                    AddError($"Operador de comparación no reconocido: {op.Type}");
                     throw new SyntaxException($"Operador de comparación no reconocido: {op.Type}");
             }
         }
@@ -352,7 +340,6 @@ public class Parser : IParser
                     expr = new AddExpr(expr, right, expr.Location);
                     break;
                 default:
-                    AddError($"Operador de término no reconocido: {op.Type}");
                     throw new SyntaxException($"Operador de término no reconocido: {op.Type}");
             }
         }
@@ -381,7 +368,6 @@ public class Parser : IParser
                     expr = new ModuloExpr(expr, right, expr.Location);
                     break;
                 default:
-                    AddError($"Operador de factor no reconocido: {op.Type}");
                     throw new SyntaxException($"Operador de factor no reconocido: {op.Type}");
             }
         }
@@ -416,7 +402,6 @@ public class Parser : IParser
                 case TokenType.Minus:
                     return new MinusExpr(right, op.Location);
                 default:
-                    AddError($"Operador unario no reconocido: {op.Type}");
                     throw new SyntaxException($"Operador unario no reconocido: {op.Type}");
             }
         }
@@ -494,6 +479,7 @@ public class Parser : IParser
 
     private Token Previous()
     {
+        if (_current == 0) return _tokens[0];
         return _tokens[_current - 1];
     }
 
@@ -537,7 +523,6 @@ public class Parser : IParser
             return Advance();
 
         var current = Peek();
-        AddError(message);
         throw new SyntaxException(message);
     }
 
@@ -550,7 +535,6 @@ public class Parser : IParser
         else if (!IsAtEnd())
         {
             var message = "Se esperaba nueva línea al final del statement";
-            AddError(message);
             throw new SyntaxException(message);
         }
     }
@@ -563,7 +547,6 @@ public class Parser : IParser
     private void Synchronize()
     {
         Advance();
-
         while (!IsAtEnd())
         {
             if (Previous().Is(TokenType.Endl)) return;

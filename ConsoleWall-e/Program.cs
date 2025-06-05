@@ -1,6 +1,7 @@
-﻿using ConsoleWall_e.Core.Errors;
+﻿using ConsoleWall_e.Core.DevUtils;
+using ConsoleWall_e.Core.Errors;
 using ConsoleWall_e.Core.Lexing;
-using ConsoleWall_e.Core.Tokens;
+using ConsoleWall_e.Core.Parser;
 
 namespace ConsoleWall_e;
 
@@ -54,7 +55,29 @@ static class Program
     private static void Run(string code)
     {
         var lexer = new Lexer(code);
-        var tokens = lexer.ScanTokens();
-        
+        var tokensResult = lexer.ScanTokens();
+
+        if (!tokensResult.IsSuccess)
+        {
+            Errors.AddRange(tokensResult.Errors);
+            return;
+        }
+
+
+        var parser = new Parser();
+        var programResult = parser.Parse(tokensResult.Value);
+        Console.WriteLine("Parser terminó");
+
+
+        if (!programResult.IsSuccess)
+        {
+            Errors.AddRange(programResult.Errors);
+            return;
+        }
+
+        // Imprimir el AST
+        var printer = new ASTPrinter();
+        Console.WriteLine("=== AST ===");
+        Console.WriteLine(printer.Print(programResult.Value));
     }
 }
