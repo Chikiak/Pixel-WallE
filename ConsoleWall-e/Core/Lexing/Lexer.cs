@@ -20,27 +20,6 @@ public class Lexer : ILexer
     private CodeLocation CurrentLocation => new(_line, _column);
     private CodeLocation TokenLocation => new(_line, _startColumn);
 
-    private static readonly IReadOnlyDictionary<string, TokenType> Keywords;
-    
-    static Lexer()
-    {
-        Keywords = new Dictionary<string, TokenType>
-        {
-            { "Spawn", TokenType.Spawn },
-            { "Color", TokenType.Color },
-            { "Size", TokenType.Size },
-            { "DrawLine", TokenType.DrawLine },
-            { "DrawCircle", TokenType.DrawCircle },
-            { "DrawRectangle", TokenType.DrawRectangle },
-            { "Fill", TokenType.Fill },
-            { "and", TokenType.And },
-            { "or", TokenType.Or },
-            { "true", TokenType.True },
-            { "false", TokenType.False },
-            { "GoTo", TokenType.GoTo }
-        };
-    }
-
     public Lexer(string source)
     {
         _source = source ?? throw new ArgumentNullException(nameof(source));
@@ -162,7 +141,7 @@ public class Lexer : ILexer
         while (IsAlphaNumericOrDash(Peek())) Advance();
 
         var text = GetCurrentTokenText();
-        var type = Keywords.GetValueOrDefault(text, TokenType.Identifier);
+        var type = LanguajeKeywords.GetKeywordType(text);
         AddToken(type);
     }
 

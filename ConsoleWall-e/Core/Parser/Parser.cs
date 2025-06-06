@@ -466,6 +466,14 @@ public class Parser : IParser
             return new GroupExpr(expr, TokenType.LeftParen, location);
         }
 
+        if (Match(TokenType.LeftBracket))
+        {
+            var location = Previous().Location;
+            var expr = ParseExpression();
+            Consume(TokenType.RightBracket, "Se esperaba ']' después de la expresión");
+            return new GroupExpr(expr, TokenType.LeftBracket, location);
+        }
+
         AddError($"Token inesperado: {Peek().Lexeme}");
         throw new SyntaxException($"Token inesperado: {Peek().Lexeme}");
     }

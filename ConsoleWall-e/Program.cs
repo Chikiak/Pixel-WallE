@@ -75,6 +75,15 @@ static class Program
             return;
         }
 
+        var semanticChecker = new CheckSemantic();
+        var semanticResult = semanticChecker.Analize(programResult.Value);
+
+        if (!semanticResult.IsSuccess)
+        {
+            Errors.AddRange(semanticResult.Errors); // Asumiendo que Analize devuelve Result<object> y tiene Errors
+            return;
+        }
+
         // Imprimir el AST
         var printer = new ASTPrinter();
         Console.WriteLine("=== AST ===");

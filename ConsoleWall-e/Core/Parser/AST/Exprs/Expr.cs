@@ -31,7 +31,7 @@ public class GroupExpr(Expr expr, TokenType groupType, CodeLocation location) : 
 public class CallExpr(string calledFunction, List<Expr> arguments, CodeLocation location) : Expr(location)
 {
     public string CalledFunction { get; private set; } = calledFunction;
-    public List<Expr> Arguments { get; private set; } = arguments;
+    public IReadOnlyList<Expr> Arguments { get; private set; } = arguments.AsReadOnly();
 
     public override T Accept<T>(IVisitor<T> visitor)
     {

@@ -13,7 +13,6 @@ public class CheckSemantic : IVisitor<Result<Type>>
     private readonly HashSet<string> _definedLabels = new();
     private readonly List<(string LabelName, CodeLocation Location)> _gotoUsages = new();
     private readonly Dictionary<string, FunctionSignature> _definedFunctions = new();
-    private bool _spawnCalled = false;
     private bool _firstStatementProcessed = false;
 
     public CheckSemantic()
@@ -49,7 +48,6 @@ public class CheckSemantic : IVisitor<Result<Type>>
         _symbolTable.Clear();
         _definedLabels.Clear();
         _gotoUsages.Clear();
-        _spawnCalled = false;
         _firstStatementProcessed = false;
 
         program.Accept(this);
@@ -172,7 +170,7 @@ public class CheckSemantic : IVisitor<Result<Type>>
 
     public Result<Type> VisitDivideExpr(DivideExpr expr)
     {
-        return CheckArithmeticExpr(expr, "/", true);
+        return CheckArithmeticExpr(expr, "/");
     }
 
     public Result<Type> VisitPowerExpr(PowerExpr expr)
@@ -182,11 +180,10 @@ public class CheckSemantic : IVisitor<Result<Type>>
 
     public Result<Type> VisitModuloExpr(ModuloExpr expr)
     {
-        return CheckArithmeticExpr(expr, "%", true);
+        return CheckArithmeticExpr(expr, "%");
     }
 
-    private Result<Type> CheckArithmeticExpr(BinaryExpr expr, string operatorName,
-        bool allowDivisionByZeroCheck = false)
+    private Result<Type> CheckArithmeticExpr(BinaryExpr expr, string operatorName)
     {
         var leftResult = expr.Left.Accept(this);
         var rightResult = expr.Right.Accept(this);
@@ -206,7 +203,7 @@ public class CheckSemantic : IVisitor<Result<Type>>
             return Result<Type>.Failure(currentErrors);
         }
 
-        return Result<Type>.Success(typeof(int));
+        return Result<Type>.Success(typeof(IntegerOrBool));
     }
 
     public Result<Type> VisitEqualEqualExpr(EqualEqualExpr expr)
@@ -298,7 +295,7 @@ public class CheckSemantic : IVisitor<Result<Type>>
             return Result<Type>.Failure(currentErrors);
         }
 
-        return Result<Type>.Success(typeof(bool));
+        return Result<Type>.Success(typeof(IntegerOrBool));
     }
 
     public Result<Type> VisitGroupExpr(GroupExpr expr)
@@ -379,8 +376,7 @@ public class CheckSemantic : IVisitor<Result<Type>>
         var argResult = argExpr.Accept(this);
         if (!argResult.IsSuccess) return;
         if (argResult.Value == expectedType) return;
-        if (!(expectedType == typeof(IntegerOrBool) && argResult.Value == typeof(IntegerOrBool)))
-            _errors.Add(new SemanticError(errorLocation,
+        _errors.Add(new SemanticError(errorLocation,
                 $"Argument '{argName}' for command '{commandName}' expects type '{expectedType.Name}', but got '{argResult.Value.Name}'."));
     }
 
