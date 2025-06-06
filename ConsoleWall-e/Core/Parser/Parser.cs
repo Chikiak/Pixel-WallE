@@ -435,21 +435,21 @@ public class Parser : IParser
     private Expr ParsePrimary()
     {
         if (Match(TokenType.True))
-            return new LiteralExpr(true, Previous().Location);
+            return new LiteralExpr(new LiteralValue(true, typeof(IntegerOrBool)), Previous().Location);
 
         if (Match(TokenType.False))
-            return new LiteralExpr(false, Previous().Location);
+            return new LiteralExpr(new LiteralValue(false, typeof(IntegerOrBool)), Previous().Location);
 
         if (Match(TokenType.Number))
         {
             var token = Previous();
-            return new LiteralExpr(token.Literal!, token.Location);
+            return new LiteralExpr(new LiteralValue(token.Literal, typeof(IntegerOrBool)), token.Location);
         }
 
         if (Match(TokenType.String))
         {
             var token = Previous();
-            return new LiteralExpr(token.Literal!, token.Location);
+            return new LiteralExpr(new LiteralValue(token.Literal, typeof(string)), token.Location);
         }
 
         if (Match(TokenType.Identifier))

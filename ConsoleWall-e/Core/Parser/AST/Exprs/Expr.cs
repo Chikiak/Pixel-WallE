@@ -5,9 +5,11 @@ namespace ConsoleWall_e.Core.Parser.AST.Exprs;
 
 public abstract class Expr(CodeLocation location) : ASTNode(location);
 
-public class LiteralExpr(object value, CodeLocation location) : Expr(location)
+public sealed record LiteralValue(object? Value, Type Type);
+
+public class LiteralExpr(LiteralValue value, CodeLocation location) : Expr(location)
 {
-    public object Value { get; private set; } = value;
+    public LiteralValue Value { get; private set; } = value;
 
     public override T Accept<T>(IVisitor<T> visitor)
     {
