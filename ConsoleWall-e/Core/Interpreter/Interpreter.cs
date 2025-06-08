@@ -206,6 +206,8 @@ public class Interpreter : IInterpreter, IVisitor<object?>
     {
         var x = ConvertToInt(Evaluate(stmt.X), stmt.X.Location, nameof(stmt.X));
         var y = ConvertToInt(Evaluate(stmt.Y), stmt.Y.Location, nameof(stmt.Y));
+        if (x < 0 || x >= _canvas.Width || y < 0 || y >= _canvas.Height)
+            throw new RuntimeErrorException(new RuntimeError(stmt.Location, $"Coordenadas de Spawn fuera de rango."));
         _currentWallEPosition = new Point(x, y);
         return null;
     }
@@ -224,6 +226,7 @@ public class Interpreter : IInterpreter, IVisitor<object?>
     public object? VisitSizeStmt(SizeStmt stmt)
     {
         _currentSize = ConvertToInt(Evaluate(stmt.SizeExpr), stmt.SizeExpr.Location, "argumento de Size");
+        if (_currentSize % 2 == 0) _currentSize--;
         if (_currentSize <= 0)
             throw new RuntimeErrorException(new RuntimeError(stmt.SizeExpr.Location,
                 "El tamaño Size debe ser un entero positivo."));
@@ -322,7 +325,7 @@ public class Interpreter : IInterpreter, IVisitor<object?>
             }
         }
 
-        _currentWallEPosition = new Point(topLeft.X + width, topLeft.Y + height);
+        _currentWallEPosition = new Point(topLeft.X + width / 2, topLeft.Y + height / 2);
         return null;
     }
 
