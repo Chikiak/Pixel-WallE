@@ -1,41 +1,4 @@
-Spawn(0,0)
-# Establece el color del pincel a rojo
-Color("Red")
-Size(3) 
-
-miPosicionX <- GetActualX()
-miPosicionY <- GetActualY()
-distancia <- 20
-iterador <- 0
-
-# Dibuja una línea hacia la derecha
-DrawLine(1, 0, distancia)
-
-# Cambia el color y dibuja un círculo
-Color("Blue")
-DrawCircle(0, 1, 10) # Círculo hacia abajo, radio 10
-
-# Moverse al centro del círculo (ya lo hace DrawCircle)
-# var centroX <- miPosicionX
-# var centroY <- miPosicionY + 10 + 10 // Asumiendo que DrawCircle actualiza la posición
-
-# Definir una etiqueta
-loop_principal
-
-condicionBooleana <- iterador < 5
-esColorPincelRojo <- IsBrushColor("Red")
-
-# Dibujar un rectángulo pequeño
-DrawRectangle(1,1, 5, 4, 2)
-
-# Salto condicional
-GoTo [loop] (true)
-
-iterador <- iterador + 1
-
-# Rellenar una zona (asumiendo que Wall-E está sobre un pixel blanco)
-Color("Yellow")
-Fill()
-
-cantidadRojos <- GetColorCount("Red", 0,0,50,50)
-esColorCanvas <- IsCanvasColor("Blue", 1,1)
+Spawn(100,100)
+Color("red")
+Size(100)
+DrawLine(1,0,200)

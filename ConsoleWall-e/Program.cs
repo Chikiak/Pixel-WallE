@@ -1,5 +1,6 @@
 ﻿using ConsoleWall_e.Core.DevUtils;
 using ConsoleWall_e.Core.Errors;
+using ConsoleWall_e.Core.Interpreter;
 using ConsoleWall_e.Core.Lexing;
 using ConsoleWall_e.Core.Parser;
 
@@ -88,5 +89,15 @@ static class Program
         var printer = new ASTPrinter();
         Console.WriteLine("=== AST ===");
         Console.WriteLine(printer.Print(programResult.Value));
+
+        var interpreter = new Interpreter("E:\\Proyectos\\ConsoleWall-e\\ConsoleWall-e\\CodigoPrueba\\output.png",
+            defaultHeight: 1000, defaultWidth: 1000);
+        var result = interpreter.Interpret(programResult.Value);
+
+        if (!result.IsSuccess)
+        {
+            Errors.AddRange(result.Errors);
+            return;
+        }
     }
 }

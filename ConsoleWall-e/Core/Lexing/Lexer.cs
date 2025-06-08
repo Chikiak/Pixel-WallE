@@ -142,6 +142,19 @@ public class Lexer : ILexer
 
         var text = GetCurrentTokenText();
         var type = LanguajeKeywords.GetKeywordType(text);
+        if (type == TokenType.False)
+        {
+            IntegerOrBool value = false;
+            AddToken(type, value);
+            return;
+        }
+
+        if (type == TokenType.True)
+        {
+            IntegerOrBool value = true;
+            AddToken(type, value);
+            return;
+        }
         AddToken(type);
     }
 
@@ -157,7 +170,8 @@ public class Lexer : ILexer
         string numberString = _source.Substring(_start, _current - _start);
         if (int.TryParse(numberString, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
         {
-            AddToken(TokenType.Number, value);
+            IntegerOrBool bvalue = value;
+            AddToken(TokenType.Number, bvalue);
         }
         else
         {
