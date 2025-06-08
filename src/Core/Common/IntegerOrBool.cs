@@ -1,4 +1,4 @@
-﻿namespace ConsoleWall_e.Core.Common;
+﻿namespace Core.Common;
 
 public class IntegerOrBool
 {

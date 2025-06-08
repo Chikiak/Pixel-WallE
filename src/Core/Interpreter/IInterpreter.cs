@@ -1,7 +1,7 @@
-using ConsoleWall_e.Core.Common;
-using ConsoleWall_e.Core.Parser.AST;
+using Core.Common;
+using Core.Parser.AST;
 
-namespace ConsoleWall_e.Core.Interpreter;
+namespace Core.Interpreter;
 
 public interface IInterpreter
 {

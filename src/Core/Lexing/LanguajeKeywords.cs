@@ -1,6 +1,6 @@
-using ConsoleWall_e.Core.Tokens;
+using Core.Tokens;
 
-namespace ConsoleWall_e.Core.Lexing;
+namespace Core.Lexing;
 
 public static class LanguajeKeywords
 {

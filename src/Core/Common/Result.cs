@@ -1,6 +1,6 @@
-using ConsoleWall_e.Core.Errors;
+using Core.Errors;
 
-namespace ConsoleWall_e.Core.Common;
+namespace Core.Common;
 
 public class Result<T> : IResult<T>
 {

@@ -1,7 +1,7 @@
-using ConsoleWall_e.Core.Common;
-using ConsoleWall_e.Core.Parser.AST.Stmts;
+using Core.Common;
+using Core.Parser.AST.Stmts;
 
-namespace ConsoleWall_e.Core.Parser.AST;
+namespace Core.Parser.AST;
 
 public class ProgramStmt(List<Stmt> statements, CodeLocation location) : ASTNode(location)
 {

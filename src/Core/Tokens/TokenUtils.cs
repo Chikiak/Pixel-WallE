@@ -1,4 +1,4 @@
-namespace ConsoleWall_e.Core.Tokens;
+namespace Core.Tokens;
 
 public static class TokenUtils
 {

@@ -1,6 +1,4 @@
-using ConsoleWall_e.Core.Common;
-
-namespace ConsoleWall_e.Core.Errors;
+namespace Core.Errors;
 
 public abstract class Error(ErrorType type, string message)
 {
@@ -12,11 +10,3 @@ public abstract class Error(ErrorType type, string message)
         return $"Error: {Message}";
     }
 }
-
-public class LexicalError(CodeLocation location, string message) : CodeError(ErrorType.Lexical, location, message);
-
-public class SemanticError(CodeLocation location, string message) : CodeError(ErrorType.Semantic, location, message);
-
-public class RuntimeError(CodeLocation location, string message) : CodeError(ErrorType.Runtime, location, message);
-
-public class ImportError(string message) : Error(ErrorType.Import, message);

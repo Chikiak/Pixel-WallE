@@ -1,8 +1,8 @@
-using ConsoleWall_e.Core.Parser.AST;
-using ConsoleWall_e.Core.Parser.AST.Exprs;
-using ConsoleWall_e.Core.Parser.AST.Stmts;
+using Core.Parser.AST;
+using Core.Parser.AST.Exprs;
+using Core.Parser.AST.Stmts;
 
-namespace ConsoleWall_e.Core.Parser;
+namespace Core.Common;
 
 public interface IVisitor<T>
 {

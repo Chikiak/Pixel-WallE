@@ -1,16 +1,11 @@
-using ConsoleWall_e.Core.Common;
-using ConsoleWall_e.Core.Errors;
-using ConsoleWall_e.Core.Parser.AST;
-using ConsoleWall_e.Core.Parser.AST.Exprs;
-using ConsoleWall_e.Core.Parser.AST.Stmts;
-using ConsoleWall_e.Core.Tokens;
+using Core.Common;
+using Core.Errors;
+using Core.Parser.AST;
+using Core.Parser.AST.Exprs;
+using Core.Parser.AST.Stmts;
+using Core.Tokens;
 
-namespace ConsoleWall_e.Core.Parser;
-
-public class SyntaxException(string message) : Exception
-{
-    public string Message { get; } = message;
-}
+namespace Core.Parser;
 
 public class Parser : IParser
 {

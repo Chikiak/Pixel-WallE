@@ -1,4 +1,4 @@
-namespace ConsoleWall_e.Core.Errors;
+namespace Core.Errors;
 
 public enum ErrorType
 {

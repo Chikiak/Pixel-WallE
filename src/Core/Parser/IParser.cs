@@ -1,8 +1,8 @@
-using ConsoleWall_e.Core.Common;
-using ConsoleWall_e.Core.Parser.AST;
-using ConsoleWall_e.Core.Tokens;
+using Core.Common;
+using Core.Parser.AST;
+using Core.Tokens;
 
-namespace ConsoleWall_e.Core.Parser;
+namespace Core.Parser;
 
 public interface IParser
 {

@@ -1,7 +1,7 @@
-using ConsoleWall_e.Core.Common;
-using ConsoleWall_e.Core.Parser.AST.Exprs;
+using Core.Common;
+using Core.Parser.AST.Exprs;
 
-namespace ConsoleWall_e.Core.Parser.AST.Stmts;
+namespace Core.Parser.AST.Stmts;
 
 public class SpawnStmt(Expr x, Expr y, CodeLocation location) : Stmt(location)
 {

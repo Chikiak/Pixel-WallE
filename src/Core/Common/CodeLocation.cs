@@ -1,4 +1,4 @@
-namespace ConsoleWall_e.Core.Common;
+namespace Core.Common;
 
 public readonly struct CodeLocation(int line, int column) : IEquatable<CodeLocation>, IComparable<CodeLocation>
 {

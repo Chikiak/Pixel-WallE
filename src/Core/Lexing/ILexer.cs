@@ -1,7 +1,7 @@
-using ConsoleWall_e.Core.Common;
-using ConsoleWall_e.Core.Tokens;
+using Core.Common;
+using Core.Tokens;
 
-namespace ConsoleWall_e.Core.Lexing;
+namespace Core.Lexing;
 
 public interface ILexer
 {

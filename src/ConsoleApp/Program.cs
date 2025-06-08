@@ -1,8 +1,8 @@
-﻿using ConsoleWall_e.Core.DevUtils;
-using ConsoleWall_e.Core.Errors;
-using ConsoleWall_e.Core.Interpreter;
-using ConsoleWall_e.Core.Lexing;
-using ConsoleWall_e.Core.Parser;
+﻿using Core.DevUtils;
+using Core.Errors;
+using Core.Interpreter;
+using Core.Lexing;
+using Core.Parser;
 
 namespace ConsoleWall_e;
 
@@ -90,7 +90,7 @@ static class Program
         Console.WriteLine("=== AST ===");
         Console.WriteLine(printer.Print(programResult.Value));
 
-        var interpreter = new Interpreter("E:\\Proyectos\\ConsoleWall-e\\src\\ConsoleApp\\CodigoPrueba\\output.png",
+        var interpreter = new Interpreter("E:\\Proyectos\\PixelWallE\\src\\ConsoleApp\\CodigoPrueba\\output.png",
             defaultHeight: 1000, defaultWidth: 1000);
         var result = interpreter.Interpret(programResult.Value);
 

@@ -1,10 +1,10 @@
-using ConsoleWall_e.Core.Common;
-using ConsoleWall_e.Core.Errors;
-using ConsoleWall_e.Core.Parser.AST;
-using ConsoleWall_e.Core.Parser.AST.Exprs;
-using ConsoleWall_e.Core.Parser.AST.Stmts;
+using Core.Common;
+using Core.Errors;
+using Core.Parser.AST;
+using Core.Parser.AST.Exprs;
+using Core.Parser.AST.Stmts;
 
-namespace ConsoleWall_e.Core.Parser;
+namespace Core.Parser;
 
 public class CheckSemantic : IVisitor<Result<Type>>
 {

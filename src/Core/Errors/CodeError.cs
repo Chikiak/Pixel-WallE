@@ -1,6 +1,6 @@
-using ConsoleWall_e.Core.Common;
+using Core.Common;
 
-namespace ConsoleWall_e.Core.Errors;
+namespace Core.Errors;
 
 public class CodeError(ErrorType type, CodeLocation location, string message) : Error(type, message)
 {

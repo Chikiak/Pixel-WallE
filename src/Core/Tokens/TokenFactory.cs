@@ -1,6 +1,6 @@
-using ConsoleWall_e.Core.Common;
+using Core.Common;
 
-namespace ConsoleWall_e.Core.Tokens;
+namespace Core.Tokens;
 
 public static class TokenFactory
 {

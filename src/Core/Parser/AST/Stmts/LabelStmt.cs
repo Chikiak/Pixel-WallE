@@ -1,6 +1,6 @@
-using ConsoleWall_e.Core.Common;
+using Core.Common;
 
-namespace ConsoleWall_e.Core.Parser.AST.Stmts;
+namespace Core.Parser.AST.Stmts;
 
 public class LabelStmt(string label, CodeLocation location) : Stmt(location)
 {

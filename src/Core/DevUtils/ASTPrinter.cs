@@ -1,10 +1,10 @@
 using System.Text;
-using ConsoleWall_e.Core.Parser;
-using ConsoleWall_e.Core.Parser.AST;
-using ConsoleWall_e.Core.Parser.AST.Exprs;
-using ConsoleWall_e.Core.Parser.AST.Stmts;
+using Core.Common;
+using Core.Parser.AST;
+using Core.Parser.AST.Exprs;
+using Core.Parser.AST.Stmts;
 
-namespace ConsoleWall_e.Core.DevUtils;
+namespace Core.DevUtils;
 
 public class ASTPrinter : IVisitor<string>
 {
