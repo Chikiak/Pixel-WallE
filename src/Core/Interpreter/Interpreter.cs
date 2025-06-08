@@ -5,7 +5,6 @@ using ConsoleWall_e.Core.Parser.AST;
 using ConsoleWall_e.Core.Parser.AST.Exprs;
 using ConsoleWall_e.Core.Parser.AST.Stmts;
 using SkiaSharp;
-using System.Drawing;
 
 namespace ConsoleWall_e.Core.Interpreter;
 
@@ -23,7 +22,7 @@ public class Interpreter : IInterpreter, IVisitor<object?>
     private SKCanvas _skCanvas;
     private SKPaint _skPaint;
 
-    private Point _currentWallEPosition;
+    private SKPoint _currentWallEPosition;
     private WallEColor _currentColor = new(0, 0, 0);
     private int _currentSize = 1;
     private string _outputFilePath;
@@ -69,7 +68,7 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         };
 
         if (!imageLoadedSuccessfully) _skCanvas.Clear(SKColors.White);
-        _currentWallEPosition = new Point(0, 0);
+        _currentWallEPosition = new SKPoint(0, 0);
     }
 
     public Result<object> Interpret(ProgramStmt program)
@@ -220,7 +219,7 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         var y = ConvertToInt(Evaluate(stmt.Y), stmt.Y.Location, nameof(stmt.Y));
         if (x < 0 || x >= _skBitmap.Width || y < 0 || y >= _skBitmap.Height)
             throw new RuntimeErrorException(new RuntimeError(stmt.Location, $"Spawn coordinates out of canvas range."));
-        _currentWallEPosition = new Point(x, y);
+        _currentWallEPosition = new SKPoint(x, y);
         return null;
     }
 
@@ -268,7 +267,7 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         _skPaint.Style = SKPaintStyle.Stroke;
         _skCanvas.DrawLine(startSkPoint, endSkPoint, _skPaint);
 
-        _currentWallEPosition = new Point((int)endSkPoint.X, (int)endSkPoint.Y);
+        _currentWallEPosition = new SKPoint((int)endSkPoint.X, (int)endSkPoint.Y);
         return null;
     }
 
@@ -289,7 +288,7 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         _skPaint.Style = _isFilling ? SKPaintStyle.Fill : SKPaintStyle.Stroke;
         _skCanvas.DrawOval(circleCenter.X, circleCenter.Y, radius, radius, _skPaint);
 
-        _currentWallEPosition = new Point((int)circleCenter.X, (int)circleCenter.Y);
+        _currentWallEPosition = new SKPoint((int)circleCenter.X, (int)circleCenter.Y);
         return null;
     }
 
@@ -313,39 +312,39 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         _skPaint.Style = _isFilling ? SKPaintStyle.Fill : SKPaintStyle.Stroke;
         _skCanvas.DrawRect(skRect, _skPaint);
 
-        _currentWallEPosition = new Point((int)(topLeft.X + width / 2), (int)(topLeft.Y + height / 2));
+        _currentWallEPosition = new SKPoint((int)(topLeft.X + width / 2), (int)(topLeft.Y + height / 2));
         return null;
     }
 
     public object? VisitFillStmt(FillStmt stmt)
     {
-        var targetSkColor = _skBitmap.GetPixel(_currentWallEPosition.X, _currentWallEPosition.Y);
+        var targetSkColor = _skBitmap.GetPixel((int)_currentWallEPosition.X, (int)_currentWallEPosition.Y);
 
         var fillSkColor = ToSkiaColor(_currentColor);
         if (targetSkColor == fillSkColor) return null;
 
-        var pixelsToProcess = new Queue<Point>();
+        var pixelsToProcess = new Queue<SKPoint>();
         pixelsToProcess.Enqueue(_currentWallEPosition);
 
-        var visited = new HashSet<Point>();
+        var visited = new HashSet<SKPoint>();
         while (pixelsToProcess.Count > 0)
         {
             var currentPixel = pixelsToProcess.Dequeue();
 
             if (!visited.Add(currentPixel)) continue;
 
-            var x = currentPixel.X;
-            var y = currentPixel.Y;
+            var x = (int)currentPixel.X;
+            var y = (int)currentPixel.Y;
 
             if (x < 0 || x >= _skBitmap.Width || y < 0 || y >= _skBitmap.Height) continue;
 
             if (_skBitmap.GetPixel(x, y) == targetSkColor)
             {
                 _skBitmap.SetPixel(x, y, fillSkColor);
-                pixelsToProcess.Enqueue(new Point(x, y - 1));
-                pixelsToProcess.Enqueue(new Point(x, y + 1));
-                pixelsToProcess.Enqueue(new Point(x - 1, y));
-                pixelsToProcess.Enqueue(new Point(x + 1, y));
+                pixelsToProcess.Enqueue(new SKPoint(x, y - 1));
+                pixelsToProcess.Enqueue(new SKPoint(x, y + 1));
+                pixelsToProcess.Enqueue(new SKPoint(x - 1, y));
+                pixelsToProcess.Enqueue(new SKPoint(x + 1, y));
             }
         }
 
@@ -538,9 +537,9 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         var evaluatedArgs = new List<object>();
         foreach (var argExpr in expr.Arguments) evaluatedArgs.Add(Evaluate(argExpr));
 
-        if (expr.CalledFunction == "GetActualX") return new IntegerOrBool(_currentWallEPosition.X);
+        if (expr.CalledFunction == "GetActualX") return new IntegerOrBool((int)_currentWallEPosition.X);
 
-        if (expr.CalledFunction == "GetActualY") return new IntegerOrBool(_currentWallEPosition.Y);
+        if (expr.CalledFunction == "GetActualY") return new IntegerOrBool((int)_currentWallEPosition.Y);
 
         if (expr.CalledFunction == "GetCanvasSize") return new IntegerOrBool(_skBitmap.Width);
 

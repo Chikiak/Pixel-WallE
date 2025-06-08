@@ -81,7 +81,7 @@ static class Program
 
         if (!semanticResult.IsSuccess)
         {
-            Errors.AddRange(semanticResult.Errors); // Asumiendo que Analize devuelve Result<object> y tiene Errors
+            Errors.AddRange(semanticResult.Errors);
             return;
         }
 
@@ -90,7 +90,7 @@ static class Program
         Console.WriteLine("=== AST ===");
         Console.WriteLine(printer.Print(programResult.Value));
 
-        var interpreter = new Interpreter("E:\\Proyectos\\ConsoleWall-e\\ConsoleWall-e\\CodigoPrueba\\output.png",
+        var interpreter = new Interpreter("E:\\Proyectos\\ConsoleWall-e\\src\\ConsoleApp\\CodigoPrueba\\output.png",
             defaultHeight: 1000, defaultWidth: 1000);
         var result = interpreter.Interpret(programResult.Value);
 

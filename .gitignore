@@ -1,5 +1,57 @@
-bin/
-obj/
+[Bb]in/
+[Oo]bj/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
+
+# Visual Studio
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+
+# JetBrains Rider
+*.sln.DotSettings.user
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# 3. ARCHIVOS ESPECÍFICOS DEL PROYECTO
+# Ignora los archivos generados por tu aplicación durante la ejecución.
+# En tu caso, el 'output.png' que se genera en el directorio de binarios.
+# Esta regla es por si lo generas en otro lugar.
+output.png
+
+# 4. PAQUETES Y DEPENDENCIAS
+# Ignora los paquetes NuGet generados y carpetas de paquetes antiguas.
+*.nupkg
+*.snupkg
+packages/
+
+# ReSharper (otro producto de JetBrains)
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# 5. ARCHIVOS DE SISTEMA OPERATIVO
+# Archivos temporales generados por macOS, Windows y Linux.
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+
+# Linux
+*~
+
+# 6. ARCHIVOS DE LOGS Y CACHÉ
+# Ignora archivos de registro y cachés de herramientas.
+*.log
+*.cache
+*.tlog
