@@ -4,8 +4,8 @@ using ConsoleWall_e.Core.Parser;
 using ConsoleWall_e.Core.Parser.AST;
 using ConsoleWall_e.Core.Parser.AST.Exprs;
 using ConsoleWall_e.Core.Parser.AST.Stmts;
+using SkiaSharp;
 using System.Drawing;
-using System.Drawing.Imaging;
 
 namespace ConsoleWall_e.Core.Interpreter;
 
@@ -18,17 +18,19 @@ public class Interpreter : IInterpreter, IVisitor<object?>
 {
     private readonly List<Error> _errors = new();
     private Dictionary<string, object> _environment = new();
-    private Bitmap _canvas;
-    private Graphics _graphics;
+
+    private SKBitmap _skBitmap;
+    private SKCanvas _skCanvas;
+    private SKPaint _skPaint;
 
     private Point _currentWallEPosition;
-    private WallEColor _currentColor = new(0, 0, 0); // Negro por defecto
+    private WallEColor _currentColor = new(0, 0, 0);
     private int _currentSize = 1;
     private string _outputFilePath;
     private bool _isFilling = false;
 
     private Dictionary<string, int> _labelIndexMap = new();
-    private int _statementPointer = 0; // Puntero a la instrucción actual
+    private int _statementPointer = 0;
     private IReadOnlyList<Stmt> _programStatements = new List<Stmt>().AsReadOnly();
 
     public Interpreter(string outputFilePath = "output.png", string? loadImagePath = null, int defaultWidth = 500,
@@ -36,51 +38,58 @@ public class Interpreter : IInterpreter, IVisitor<object?>
     {
         _outputFilePath = outputFilePath;
         var imageLoadedSuccessfully = false;
+
         if (!string.IsNullOrEmpty(loadImagePath) && File.Exists(loadImagePath))
+        {
             try
             {
-                // Carga la imagen manteniendo su información de píxeles.
-                // Bitmap(string) crea una copia en un formato estándar (usualmente 32bppArgb).
-                using (var bmpTemp = new Bitmap(loadImagePath))
-                {
-                    _canvas = new Bitmap(bmpTemp); // Crea una copia editable
-                }
-
-                //Console.WriteLine($"Imagen cargada '{loadImagePath}' ({_canvas.Width}x{_canvas.Height}).");
+                _skBitmap = SKBitmap.Decode(loadImagePath);
+                if (_skBitmap == null) throw new Exception($"Failed to decode image '{loadImagePath}'.");
+                //Console.WriteLine($"Image loaded '{loadImagePath}' ({_skBitmap.Width}x{_skBitmap.Height}).");
                 imageLoadedSuccessfully = true;
             }
             catch (Exception ex)
             {
                 _errors.Add(new ImportError(
-                    $"Error al cargar la imagen '{loadImagePath}': {ex.Message}. Usando lienzo por defecto."));
-                _canvas = new Bitmap(defaultWidth, defaultHeight);
+                    $"Error loading image '{loadImagePath}': {ex.Message}. Using default canvas."));
+                _skBitmap = new SKBitmap(defaultWidth, defaultHeight);
             }
+        }
         else
-            // No se especificó imagen o no existe, crea un lienzo nuevo.
-            _canvas = new Bitmap(defaultWidth, defaultHeight);
+        {
+            _skBitmap = new SKBitmap(defaultWidth, defaultHeight);
+        }
 
-        _graphics = Graphics.FromImage(_canvas);
-        if (!imageLoadedSuccessfully) _graphics.Clear(Color.White);
+        _skCanvas = new SKCanvas(_skBitmap);
+        _skPaint = new SKPaint
+        {
+            IsAntialias = true,
+            StrokeWidth = _currentSize,
+            Color = ToSkiaColor(_currentColor)
+        };
+
+        if (!imageLoadedSuccessfully) _skCanvas.Clear(SKColors.White);
         _currentWallEPosition = new Point(0, 0);
     }
 
     public Result<object> Interpret(ProgramStmt program)
     {
-        //Falta manejar errores anteriores pero se puede seguir ya que lo que hacen es dejar el canvas por defecto
         _environment.Clear();
         _currentColor = new WallEColor(0, 0, 0);
         _currentSize = 1;
-        _isFilling = false;
+        _isFilling = false; // Reset fill mode
+
+
+        _skPaint.Color = ToSkiaColor(_currentColor);
+        _skPaint.StrokeWidth = _currentSize;
+
 
         _labelIndexMap.Clear();
         _programStatements = program.Statements;
 
-        // Pre-escaneo para encontrar todas las etiquetas y sus índices.
         for (var i = 0; i < _programStatements.Count; i++)
-        {
-            if (_programStatements[i] is not LabelStmt labelStmt) continue;
-            _labelIndexMap.Add(labelStmt.Label, i);
-        }
+            if (_programStatements[i] is LabelStmt labelStmt)
+                _labelIndexMap.Add(labelStmt.Label, i);
 
         _statementPointer = 0;
         try
@@ -89,55 +98,59 @@ public class Interpreter : IInterpreter, IVisitor<object?>
             {
                 if (_errors.Any(e => e.Type == ErrorType.Runtime)) break;
                 var currentStmt = _programStatements[_statementPointer];
-                _statementPointer++; // Avanza el puntero ANTES de ejecutar, GoTo lo ajustará.
+                _statementPointer++;
                 Execute(currentStmt);
             }
         }
-        catch (RuntimeErrorException ex) // Captura errores en Runtime
+        catch (RuntimeErrorException ex)
         {
             _errors.Add(ex.runtimeError);
         }
-        catch (Exception ex) // Captura otros errores inesperados
+        catch (Exception ex)
         {
             var errorLocation = _statementPointer > 0 && _statementPointer <= _programStatements.Count
                 ? _programStatements[_statementPointer - 1].Location
-                : new CodeLocation(0, 0); // Localización por defecto si no se puede determinar.
-            _errors.Add(new RuntimeError(errorLocation, $"Error inesperado en tiempo de ejecución: {ex.Message}"));
+                : new CodeLocation(0, 0);
+            _errors.Add(new RuntimeError(errorLocation,
+                $"Unexpected runtime error: {ex.Message}\nStackTrace: {ex.StackTrace}"));
         }
 
         var hadRTErrors = _errors.Any(e => e.Type == ErrorType.Runtime);
+        var hadIErrors = _errors.Any(e => e.Type == ErrorType.Import);
         var hadErrors = _errors.Any();
+
 
         try
         {
-            _canvas.Save(_outputFilePath, ImageFormat.Png);
-            if (hadErrors)
+            // Save image using SkiaSharp
+            using (var image = SKImage.FromBitmap(_skBitmap))
+            using (var data = image.Encode(SKEncodedImageFormat.Png, 100)) // 100 is quality for PNG
+            using (var stream = File.OpenWrite(_outputFilePath))
             {
-                if (!hadRTErrors && _errors.Any(e => e.Type == ErrorType.Import))
-                    Console.WriteLine(
-                        $"Interpretación del script completada. Imagen guardada en '{_outputFilePath}'. Nota: Hubo errores de importación de imagen inicial.");
-                else
-                    Console.WriteLine(
-                        $"Interpretación del script con errores. Imagen guardada con el progreso hasta el error en '{_outputFilePath}'.");
+                data.SaveTo(stream);
             }
+
+            if (hadRTErrors)
+                Console.WriteLine(
+                    $"Interpretation completed with errors. Image saved with progress up to the error in '{_outputFilePath}'.");
+            else if (hadIErrors)
+                Console.WriteLine(
+                    $"Interpretation completed. Image saved in '{_outputFilePath}'. Note: There was an error loading the initial image, a default canvas was used.");
             else
-            {
-                Console.WriteLine($"Interpretación completada exitosamente. Imagen guardada en '{_outputFilePath}'.");
-            }
+                Console.WriteLine($"Interpretation completed successfully. Image saved in '{_outputFilePath}'.");
         }
         catch (Exception ex)
         {
-            // Posible error AL GUARDAR la imagen
-            _errors.Add(new ImportError($"Fallo al guardar la imagen en '{_outputFilePath}': {ex.Message}"));
+            _errors.Add(new ImportError($"Failed to save image to '{_outputFilePath}': {ex.Message}"));
         }
         finally
         {
-            _graphics.Dispose();
-            _canvas.Dispose();
+            _skCanvas?.Dispose();
+            _skBitmap?.Dispose();
+            _skPaint?.Dispose();
         }
 
         if (_errors.Any()) return Result<object>.Failure(_errors);
-
         return Result<object>.Success(new object());
     }
 
@@ -151,30 +164,30 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         return expr.Accept(this);
     }
 
-    private Color ToSystemColor(WallEColor c)
+    private SKColor ToSkiaColor(WallEColor c)
     {
-        return Color.FromArgb(c.Alpha, c.Red, c.Green, c.Blue);
+        return new SKColor(c.Red, c.Green, c.Blue, c.Alpha);
     }
 
     private int ConvertToInt(object value, CodeLocation loc, string context = "valor")
     {
         if (value is IntegerOrBool iob) return iob;
         throw new RuntimeErrorException(new RuntimeError(loc,
-            $"Se esperaba un entero para {context}, pero se obtuvo {value?.GetType().Name ?? "null"}."));
+            $"Expected integer for {context}, got {value?.GetType().Name ?? "null"}."));
     }
 
     private bool ConvertToBool(object value, CodeLocation loc, string context = "valor")
     {
         if (value is IntegerOrBool iob) return iob;
         throw new RuntimeErrorException(new RuntimeError(loc,
-            $"Se esperaba un booleano para {context}, pero se obtuvo {value?.GetType().Name ?? "null"}."));
+            $"Expected boolean for {context}, got {value?.GetType().Name ?? "null"}."));
     }
 
     private string ConvertToString(object value, CodeLocation loc, string context = "valor")
     {
         if (value is string s) return s;
         throw new RuntimeErrorException(new RuntimeError(loc,
-            $"Se esperaba un string para {context}, pero se obtuvo {value?.GetType().Name ?? "null"}."));
+            $"Expected string for {context}, got {value?.GetType().Name ?? "null"}."));
     }
 
     private string ConvertValToString(object val, CodeLocation loc)
@@ -187,9 +200,8 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         }
 
         throw new RuntimeErrorException(new RuntimeError(loc,
-            $"No se puede convertir {val?.GetType().Name ?? "null"} a string para concatenación."));
+            $"Cannot convert {val?.GetType().Name ?? "null"} to string for concatenation."));
     }
-
 
     public object? VisitProgramStmt(ProgramStmt stmt)
     {
@@ -206,161 +218,140 @@ public class Interpreter : IInterpreter, IVisitor<object?>
     {
         var x = ConvertToInt(Evaluate(stmt.X), stmt.X.Location, nameof(stmt.X));
         var y = ConvertToInt(Evaluate(stmt.Y), stmt.Y.Location, nameof(stmt.Y));
-        if (x < 0 || x >= _canvas.Width || y < 0 || y >= _canvas.Height)
-            throw new RuntimeErrorException(new RuntimeError(stmt.Location, $"Coordenadas de Spawn fuera de rango."));
+        if (x < 0 || x >= _skBitmap.Width || y < 0 || y >= _skBitmap.Height)
+            throw new RuntimeErrorException(new RuntimeError(stmt.Location, $"Spawn coordinates out of canvas range."));
         _currentWallEPosition = new Point(x, y);
         return null;
     }
 
     public object? VisitColorStmt(ColorStmt stmt)
     {
-        var colorStr = ConvertToString(Evaluate(stmt.ColorExpr), stmt.ColorExpr.Location, "argumento de Color");
+        var colorStr = ConvertToString(Evaluate(stmt.ColorExpr), stmt.ColorExpr.Location, "Color argument");
         if (WallEColor.TryParse(colorStr, out var newColor))
+        {
             _currentColor = newColor;
+            _skPaint.Color = ToSkiaColor(_currentColor);
+        }
         else
+        {
             throw new RuntimeErrorException(new RuntimeError(stmt.ColorExpr.Location,
-                $"String de color inválido '{colorStr}' en tiempo de ejecución."));
+                $"Invalid color string '{colorStr}'."));
+        }
+
         return null;
     }
 
     public object? VisitSizeStmt(SizeStmt stmt)
     {
-        _currentSize = ConvertToInt(Evaluate(stmt.SizeExpr), stmt.SizeExpr.Location, "argumento de Size");
+        _currentSize = ConvertToInt(Evaluate(stmt.SizeExpr), stmt.SizeExpr.Location, "Size argument");
         if (_currentSize % 2 == 0) _currentSize--;
         if (_currentSize <= 0)
-            throw new RuntimeErrorException(new RuntimeError(stmt.SizeExpr.Location,
-                "El tamaño Size debe ser un entero positivo."));
+            throw new RuntimeErrorException(
+                new RuntimeError(stmt.SizeExpr.Location, "Size must be a positive integer."));
+        _skPaint.StrokeWidth = _currentSize;
         return null;
     }
 
     public object? VisitDrawLineStmt(DrawLineStmt stmt)
     {
-        var dirX = ConvertToInt(Evaluate(stmt.DirX), stmt.DirX.Location, "DirX de DrawLine");
-        var dirY = ConvertToInt(Evaluate(stmt.DirY), stmt.DirY.Location, "DirY de DrawLine");
-        var distance = ConvertToInt(Evaluate(stmt.Distance), stmt.Distance.Location, "Distance de DrawLine");
+        var dirX = ConvertToInt(Evaluate(stmt.DirX), stmt.DirX.Location, "DirX");
+        var dirY = ConvertToInt(Evaluate(stmt.DirY), stmt.DirY.Location, "DirY");
+        var distance = ConvertToInt(Evaluate(stmt.Distance), stmt.Distance.Location, "Distance");
 
         if (Math.Abs(dirX) > 1 || Math.Abs(dirY) > 1 || (dirX == 0 && dirY == 0 && distance != 0))
-            throw new RuntimeErrorException(new RuntimeError(stmt.Location,
-                "Dirección inválida para DrawLine (componentes deben ser -1, 0, o 1, y no (0,0) si distancia no es 0)."));
+            throw new RuntimeErrorException(new RuntimeError(stmt.Location, "Invalid direction for DrawLine."));
 
-        var startPoint = _currentWallEPosition;
-        var endPoint = new Point(_currentWallEPosition.X + dirX * distance, _currentWallEPosition.Y + dirY * distance);
+        var startSkPoint = new SKPoint(_currentWallEPosition.X, _currentWallEPosition.Y);
+        var endSkPoint = new SKPoint(_currentWallEPosition.X + dirX * distance,
+            _currentWallEPosition.Y + dirY * distance);
 
-        using (var pen = new Pen(ToSystemColor(_currentColor), _currentSize))
-        {
-            _graphics.DrawLine(pen, startPoint, endPoint);
-        }
+        _skPaint.Style = SKPaintStyle.Stroke;
+        _skCanvas.DrawLine(startSkPoint, endSkPoint, _skPaint);
 
-        _currentWallEPosition = endPoint;
+        _currentWallEPosition = new Point((int)endSkPoint.X, (int)endSkPoint.Y);
         return null;
     }
 
     public object? VisitDrawCircleStmt(DrawCircleStmt stmt)
     {
-        var dirX = ConvertToInt(Evaluate(stmt.DirX), stmt.DirX.Location, "DirX de DrawCircle");
-        var dirY = ConvertToInt(Evaluate(stmt.DirY), stmt.DirY.Location, "DirY de DrawCircle");
-        var radius = ConvertToInt(Evaluate(stmt.Radius), stmt.Radius.Location, "Radius de DrawCircle");
+        var dirX = ConvertToInt(Evaluate(stmt.DirX), stmt.DirX.Location, "DirX for circle center");
+        var dirY = ConvertToInt(Evaluate(stmt.DirY), stmt.DirY.Location, "DirY for circle center");
+        var radius = ConvertToInt(Evaluate(stmt.Radius), stmt.Radius.Location, "Radius");
 
         if (radius <= 0)
-            throw new RuntimeErrorException(new RuntimeError(stmt.Radius.Location, "El radio debe ser positivo."));
+            throw new RuntimeErrorException(new RuntimeError(stmt.Radius.Location, "Radius must be positive."));
         if (Math.Abs(dirX) > 1 || Math.Abs(dirY) > 1)
             throw new RuntimeErrorException(new RuntimeError(stmt.DirX.Location,
-                "DirX/DirY para el centro de DrawCircle deben ser -1, 0, o 1."));
+                "DirX/DirY for circle center offset must be -1, 0, or 1."));
 
-        var circleCenter = new Point(_currentWallEPosition.X + dirX, _currentWallEPosition.Y + dirY);
-        var boundingBox = new Rectangle(circleCenter.X - radius, circleCenter.Y - radius, radius * 2, radius * 2);
+        var circleCenter = new SKPoint(_currentWallEPosition.X + dirX, _currentWallEPosition.Y + dirY);
 
-        if (_isFilling)
-        {
-            using (var brush = new SolidBrush(ToSystemColor(_currentColor)))
-            {
-                _graphics.FillEllipse(brush, boundingBox);
-            }
+        _skPaint.Style = _isFilling ? SKPaintStyle.Fill : SKPaintStyle.Stroke;
+        _skCanvas.DrawOval(circleCenter.X, circleCenter.Y, radius, radius, _skPaint);
 
-            _isFilling = false;
-        }
-        else
-        {
-            using (var pen = new Pen(ToSystemColor(_currentColor), _currentSize))
-            {
-                _graphics.DrawEllipse(pen, boundingBox);
-            }
-        }
-
-        _currentWallEPosition = circleCenter;
+        _currentWallEPosition = new Point((int)circleCenter.X, (int)circleCenter.Y);
         return null;
     }
 
     public object? VisitDrawRectangleStmt(DrawRectangleStmt stmt)
     {
-        var dirX = ConvertToInt(Evaluate(stmt.DirX), stmt.DirX.Location, "DirX de DrawRectangle");
-        var dirY = ConvertToInt(Evaluate(stmt.DirY), stmt.DirY.Location, "DirY de DrawRectangle");
-        var distance = ConvertToInt(Evaluate(stmt.Distance), stmt.Distance.Location, "Distance de DrawRectangle");
-        var width = ConvertToInt(Evaluate(stmt.Width), stmt.Width.Location, "Width de DrawRectangle");
-        var height = ConvertToInt(Evaluate(stmt.Height), stmt.Height.Location, "Height de DrawRectangle");
+        var dirX = ConvertToInt(Evaluate(stmt.DirX), stmt.DirX.Location, "DirX");
+        var dirY = ConvertToInt(Evaluate(stmt.DirY), stmt.DirY.Location, "DirY");
+        var distance = ConvertToInt(Evaluate(stmt.Distance), stmt.Distance.Location, "Distance");
+        var width = ConvertToInt(Evaluate(stmt.Width), stmt.Width.Location, "Width");
+        var height = ConvertToInt(Evaluate(stmt.Height), stmt.Height.Location, "Height");
 
         if (width <= 0 || height <= 0)
             throw new RuntimeErrorException(new RuntimeError(stmt.Location,
-                "Width y Height para DrawRectangle deben ser positivos."));
+                "Width and Height for DrawRectangle must be positive."));
         if (Math.Abs(dirX) > 1 || Math.Abs(dirY) > 1 || (dirX == 0 && dirY == 0 && distance != 0))
-            throw new RuntimeErrorException(new RuntimeError(stmt.Location, "Dirección inválida para DrawRectangle."));
+            throw new RuntimeErrorException(new RuntimeError(stmt.Location, "Invalid direction for DrawRectangle."));
 
-        var topLeft = new Point(_currentWallEPosition.X + dirX * distance, _currentWallEPosition.Y + dirY * distance);
-        var rect = new Rectangle(topLeft.X, topLeft.Y, width, height);
+        var topLeft = new SKPoint(_currentWallEPosition.X + dirX * distance, _currentWallEPosition.Y + dirY * distance);
+        var skRect = SKRect.Create(topLeft, new SKSize(width, height));
 
-        if (_isFilling)
-        {
-            using (var brush = new SolidBrush(ToSystemColor(_currentColor)))
-            {
-                _graphics.FillRectangle(brush, rect);
-            }
+        _skPaint.Style = _isFilling ? SKPaintStyle.Fill : SKPaintStyle.Stroke;
+        _skCanvas.DrawRect(skRect, _skPaint);
 
-            _isFilling = false;
-        }
-        else
-        {
-            using (var pen = new Pen(ToSystemColor(_currentColor), _currentSize))
-            {
-                _graphics.DrawRectangle(pen, rect);
-            }
-        }
-
-        _currentWallEPosition = new Point(topLeft.X + width / 2, topLeft.Y + height / 2);
+        _currentWallEPosition = new Point((int)(topLeft.X + width / 2), (int)(topLeft.Y + height / 2));
         return null;
     }
 
     public object? VisitFillStmt(FillStmt stmt)
     {
-        var targetSystemColor = _canvas.GetPixel(_currentWallEPosition.X, _currentWallEPosition.Y);
-        var targetWallEColor = new WallEColor(targetSystemColor.R, targetSystemColor.G, targetSystemColor.B,
-            targetSystemColor.A);
+        var targetSkColor = _skBitmap.GetPixel(_currentWallEPosition.X, _currentWallEPosition.Y);
 
-        var fillColor = _currentColor;
-        var fillSystemColor = ToSystemColor(fillColor);
-        if (targetWallEColor == fillColor) return null;
+        var fillSkColor = ToSkiaColor(_currentColor);
+        if (targetSkColor == fillSkColor) return null;
+
         var pixelsToProcess = new Queue<Point>();
         pixelsToProcess.Enqueue(_currentWallEPosition);
 
+        var visited = new HashSet<Point>();
         while (pixelsToProcess.Count > 0)
         {
             var currentPixel = pixelsToProcess.Dequeue();
 
+            if (!visited.Add(currentPixel)) continue;
+
             var x = currentPixel.X;
             var y = currentPixel.Y;
 
-            var pixelColorAtCurrent = _canvas.GetPixel(x, y);
-            if (pixelColorAtCurrent == targetSystemColor)
+            if (x < 0 || x >= _skBitmap.Width || y < 0 || y >= _skBitmap.Height) continue;
+
+            if (_skBitmap.GetPixel(x, y) == targetSkColor)
             {
-                _canvas.SetPixel(x, y, fillSystemColor);
-                if (y - 1 >= 0) pixelsToProcess.Enqueue(new Point(x, y - 1));
-                if (y + 1 < _canvas.Height) pixelsToProcess.Enqueue(new Point(x, y + 1));
-                if (x - 1 >= 0) pixelsToProcess.Enqueue(new Point(x - 1, y));
-                if (x + 1 < _canvas.Width) pixelsToProcess.Enqueue(new Point(x + 1, y));
+                _skBitmap.SetPixel(x, y, fillSkColor);
+                pixelsToProcess.Enqueue(new Point(x, y - 1));
+                pixelsToProcess.Enqueue(new Point(x, y + 1));
+                pixelsToProcess.Enqueue(new Point(x - 1, y));
+                pixelsToProcess.Enqueue(new Point(x + 1, y));
             }
         }
 
         return null;
     }
+
 
     public object? VisitAssignStmt(AssignStmt stmt)
     {
@@ -375,13 +366,12 @@ public class Interpreter : IInterpreter, IVisitor<object?>
 
     public object? VisitGoToStmt(GoToStmt stmt)
     {
-        var condition = ConvertToBool(Evaluate(stmt.Condition), stmt.Condition.Location, "condición de GoTo");
+        var condition = ConvertToBool(Evaluate(stmt.Condition), stmt.Condition.Location, "GoTo condition");
         if (!condition) return null;
         if (_labelIndexMap.TryGetValue(stmt.Label, out var targetIndex)) _statementPointer = targetIndex;
         return null;
     }
 
-    //Expr
     public object VisitLiteralExpr(LiteralExpr expr)
     {
         return expr.Value.Value ??
@@ -390,76 +380,71 @@ public class Interpreter : IInterpreter, IVisitor<object?>
 
     public object VisitBangExpr(BangExpr expr)
     {
-        var value = ConvertToBool(Evaluate(expr.Right), expr.Right.Location, "operando de !");
-        return new IntegerOrBool(!value);
+        return new IntegerOrBool(!ConvertToBool(Evaluate(expr.Right), expr.Right.Location, "operand of !"));
     }
 
     public object VisitMinusExpr(MinusExpr expr)
     {
-        var value = ConvertToInt(Evaluate(expr.Right), expr.Right.Location, "operando de negación -");
-        return new IntegerOrBool(-value);
+        return new IntegerOrBool(-ConvertToInt(Evaluate(expr.Right), expr.Right.Location, "operand of negation -"));
     }
 
     public object VisitAddExpr(AddExpr expr)
     {
         var leftVal = Evaluate(expr.Left);
         var rightVal = Evaluate(expr.Right);
-
         if (leftVal is string || rightVal is string)
             return ConvertValToString(leftVal, expr.Left.Location) + ConvertValToString(rightVal, expr.Right.Location);
-        return new IntegerOrBool(ConvertToInt(leftVal, expr.Left.Location, "operando izquierdo de +") +
-                                 ConvertToInt(rightVal, expr.Right.Location, "operando derecho de +"));
+        return new IntegerOrBool(ConvertToInt(leftVal, expr.Left.Location, "left operand of +") +
+                                 ConvertToInt(rightVal, expr.Right.Location, "right operand of +"));
     }
 
     public object VisitSubtractExpr(SubtractExpr expr)
     {
-        var left = ConvertToInt(Evaluate(expr.Left), expr.Left.Location, "operando izquierdo de -");
-        var right = ConvertToInt(Evaluate(expr.Right), expr.Right.Location, "operando derecho de -");
-        return new IntegerOrBool(left - right);
+        return new IntegerOrBool(ConvertToInt(Evaluate(expr.Left), expr.Left.Location, "left operand of -") -
+                                 ConvertToInt(Evaluate(expr.Right), expr.Right.Location, "right operand of -"));
     }
 
     public object VisitMultiplyExpr(MultiplyExpr expr)
     {
         var leftVal = Evaluate(expr.Left);
         var rightVal = Evaluate(expr.Right);
-
         if (leftVal is string sVal)
         {
-            var count = ConvertToInt(rightVal, expr.Right.Location, "multiplicador para string (derecho)");
+            var count = ConvertToInt(rightVal, expr.Right.Location, "multiplier for string (right)");
             if (count < 0)
                 throw new RuntimeErrorException(new RuntimeError(expr.Right.Location,
-                    "No se puede repetir un string un número negativo de veces."));
+                    "Cannot repeat a string a negative number of times."));
             return string.Concat(Enumerable.Repeat(sVal, count));
         }
 
         if (rightVal is string sRVal)
         {
-            var count = ConvertToInt(leftVal, expr.Left.Location, "multiplicador para string (izquierdo)");
+            var count = ConvertToInt(leftVal, expr.Left.Location, "multiplier for string (left)");
             if (count < 0)
                 throw new RuntimeErrorException(new RuntimeError(expr.Left.Location,
-                    "No se puede repetir un string un número negativo de veces."));
+                    "Cannot repeat a string a negative number of times."));
             return string.Concat(Enumerable.Repeat(sRVal, count));
         }
 
-        return new IntegerOrBool(ConvertToInt(leftVal, expr.Left.Location, "operando izquierdo de *") *
-                                 ConvertToInt(rightVal, expr.Right.Location, "operando derecho de *"));
+        return new IntegerOrBool(ConvertToInt(leftVal, expr.Left.Location, "left operand of *") *
+                                 ConvertToInt(rightVal, expr.Right.Location, "right operand of *"));
     }
 
     public object VisitDivideExpr(DivideExpr expr)
     {
-        var left = ConvertToInt(Evaluate(expr.Left), expr.Left.Location, "dividendo");
+        var left = ConvertToInt(Evaluate(expr.Left), expr.Left.Location, "dividend");
         var right = ConvertToInt(Evaluate(expr.Right), expr.Right.Location, "divisor");
-        if (right == 0) throw new RuntimeErrorException(new RuntimeError(expr.Right.Location, "División por cero."));
+        if (right == 0) throw new RuntimeErrorException(new RuntimeError(expr.Right.Location, "Division by zero."));
         return new IntegerOrBool(left / right);
     }
 
     public object VisitPowerExpr(PowerExpr expr)
     {
-        var numBase = ConvertToInt(Evaluate(expr.Left), expr.Left.Location, "base de la potencia");
-        var exponent = ConvertToInt(Evaluate(expr.Right), expr.Right.Location, "exponente de la potencia");
+        var numBase = ConvertToInt(Evaluate(expr.Left), expr.Left.Location, "base of power");
+        var exponent = ConvertToInt(Evaluate(expr.Right), expr.Right.Location, "exponent of power");
         if (exponent < 0)
             throw new RuntimeErrorException(new RuntimeError(expr.Right.Location,
-                "El exponente debe ser no-negativo para la potencia entera."));
+                "Exponent must be non-negative for integer power."));
         try
         {
             return new IntegerOrBool((int)Math.Pow(numBase, exponent));
@@ -467,15 +452,15 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         catch (OverflowException)
         {
             throw new RuntimeErrorException(new RuntimeError(expr.Location,
-                "Resultado de la potencia fuera de rango para un entero."));
+                "Result of power operation out of range for an integer."));
         }
     }
 
     public object VisitModuloExpr(ModuloExpr expr)
     {
-        var left = ConvertToInt(Evaluate(expr.Left), expr.Left.Location, "dividendo de %");
-        var right = ConvertToInt(Evaluate(expr.Right), expr.Right.Location, "divisor de %");
-        if (right == 0) throw new RuntimeErrorException(new RuntimeError(expr.Right.Location, "Módulo por cero."));
+        var left = ConvertToInt(Evaluate(expr.Left), expr.Left.Location, "dividend of %");
+        var right = ConvertToInt(Evaluate(expr.Right), expr.Right.Location, "divisor of %");
+        if (right == 0) throw new RuntimeErrorException(new RuntimeError(expr.Right.Location, "Modulo by zero."));
         return new IntegerOrBool(left % right);
     }
 
@@ -483,14 +468,10 @@ public class Interpreter : IInterpreter, IVisitor<object?>
     {
         var left = Evaluate(expr.Left);
         var right = Evaluate(expr.Right);
-
-        if (left is IntegerOrBool liob && right is IntegerOrBool riob)
-            return new IntegerOrBool((int)liob == (int)riob);
-        if (left is string sl && right is string sr)
-            return new IntegerOrBool(sl == sr);
-
+        if (left is IntegerOrBool liob && right is IntegerOrBool riob) return new IntegerOrBool((int)liob == (int)riob);
+        if (left is string sl && right is string sr) return new IntegerOrBool(sl == sr);
         throw new RuntimeErrorException(new RuntimeError(expr.Location,
-            $"Tipos incompatibles para comparación '==' en tiempo de ejecución: {left?.GetType()} y {right?.GetType()}"));
+            $"Incompatible types for '==': {left?.GetType()} and {right?.GetType()}"));
     }
 
     public object VisitBangEqualExpr(BangEqualExpr expr)
@@ -502,8 +483,8 @@ public class Interpreter : IInterpreter, IVisitor<object?>
 
     private IntegerOrBool PerformNumericComparison(BinaryExpr expr, Func<int, int, bool> comparison, string ope)
     {
-        var left = ConvertToInt(Evaluate(expr.Left), expr.Left.Location, $"operando izquierdo de '{ope}'");
-        var right = ConvertToInt(Evaluate(expr.Right), expr.Right.Location, $"operando derecho de '{ope}'");
+        var left = ConvertToInt(Evaluate(expr.Left), expr.Left.Location, $"left operand of '{ope}'");
+        var right = ConvertToInt(Evaluate(expr.Right), expr.Right.Location, $"right operand of '{ope}'");
         return new IntegerOrBool(comparison(left, right));
     }
 
@@ -529,16 +510,16 @@ public class Interpreter : IInterpreter, IVisitor<object?>
 
     public object VisitAndExpr(AndExpr expr)
     {
-        var left = ConvertToBool(Evaluate(expr.Left), expr.Left.Location, "operando izquierdo de 'and'");
-        if (!left) return new IntegerOrBool(false);
-        return new IntegerOrBool(ConvertToBool(Evaluate(expr.Right), expr.Right.Location, "operando derecho de 'and'"));
+        var left = ConvertToBool(Evaluate(expr.Left), expr.Left.Location, "left operand of 'and'");
+        if (!left) return new IntegerOrBool(false); // Short-circuit
+        return new IntegerOrBool(ConvertToBool(Evaluate(expr.Right), expr.Right.Location, "right operand of 'and'"));
     }
 
     public object VisitOrExpr(OrExpr expr)
     {
-        var left = ConvertToBool(Evaluate(expr.Left), expr.Left.Location, "operando izquierdo de 'or'");
-        if (left) return new IntegerOrBool(true);
-        return new IntegerOrBool(ConvertToBool(Evaluate(expr.Right), expr.Right.Location, "operando derecho de 'or'"));
+        var left = ConvertToBool(Evaluate(expr.Left), expr.Left.Location, "left operand of 'or'");
+        if (left) return new IntegerOrBool(true); // Short-circuit
+        return new IntegerOrBool(ConvertToBool(Evaluate(expr.Right), expr.Right.Location, "right operand of 'or'"));
     }
 
     public object VisitGroupExpr(GroupExpr expr)
@@ -549,7 +530,7 @@ public class Interpreter : IInterpreter, IVisitor<object?>
     public object VisitVariableExpr(VariableExpr expr)
     {
         if (_environment.TryGetValue(expr.Name, out var value)) return value!;
-        throw new RuntimeErrorException(new RuntimeError(expr.Location, $"Variable no definida '{expr.Name}'."));
+        throw new RuntimeErrorException(new RuntimeError(expr.Location, $"Variable '{expr.Name}' not defined."));
     }
 
     public object VisitCallExpr(CallExpr expr)
@@ -561,73 +542,73 @@ public class Interpreter : IInterpreter, IVisitor<object?>
 
         if (expr.CalledFunction == "GetActualY") return new IntegerOrBool(_currentWallEPosition.Y);
 
-        if (expr.CalledFunction == "GetCanvasSize") return new IntegerOrBool(_canvas.Width);
+        if (expr.CalledFunction == "GetCanvasSize") return new IntegerOrBool(_skBitmap.Width);
 
         if (expr.CalledFunction == "IsBrushColor")
         {
             var brushColorStr =
-                ConvertToString(evaluatedArgs[0], expr.Arguments[0].Location, "color para IsBrushColor");
+                ConvertToString(evaluatedArgs[0], expr.Arguments[0].Location, "color for IsBrushColor");
             if (WallEColor.TryParse(brushColorStr, out var checkColor))
                 return new IntegerOrBool(_currentColor == checkColor);
             throw new RuntimeErrorException(new RuntimeError(expr.Arguments[0].Location,
-                $"String de color inválido '{brushColorStr}' para IsBrushColor."));
+                $"Invalid color string '{brushColorStr}' for IsBrushColor."));
         }
 
         if (expr.CalledFunction == "IsBrushSize")
             return new IntegerOrBool(_currentSize ==
                                      ConvertToInt(evaluatedArgs[0], expr.Arguments[0].Location,
-                                         "tamaño para IsBrushSize"));
+                                         "size for IsBrushSize"));
 
         if (expr.CalledFunction == "IsCanvasColor")
         {
-            var canvasColorStr =
-                ConvertToString(evaluatedArgs[0], expr.Arguments[0].Location, "color para IsCanvasColor");
-            var cx = ConvertToInt(evaluatedArgs[1], expr.Arguments[1].Location, "x para IsCanvasColor");
-            var cy = ConvertToInt(evaluatedArgs[2], expr.Arguments[2].Location, "y para IsCanvasColor");
+            var canvasColorStr = ConvertToString(evaluatedArgs[0], expr.Arguments[0].Location,
+                "color for IsCanvasColor");
+            var cx = ConvertToInt(evaluatedArgs[1], expr.Arguments[1].Location, "x for IsCanvasColor");
+            var cy = ConvertToInt(evaluatedArgs[2], expr.Arguments[2].Location, "y for IsCanvasColor");
 
-            if (!WallEColor.TryParse(canvasColorStr, out var targetColor))
+            if (!WallEColor.TryParse(canvasColorStr, out var targetWallEColor))
                 throw new RuntimeErrorException(new RuntimeError(expr.Arguments[0].Location,
-                    $"String de color inválido '{canvasColorStr}' para IsCanvasColor."));
+                    $"Invalid color string '{canvasColorStr}' for IsCanvasColor."));
 
-            if (cx < 0 || cx >= _canvas.Width || cy < 0 || cy >= _canvas.Height) return new IntegerOrBool(false);
+            if (cx < 0 || cx >= _skBitmap.Width || cy < 0 || cy >= _skBitmap.Height)
+                return new IntegerOrBool(false);
 
-            var pixelColor = _canvas.GetPixel(cx, cy);
-            return new IntegerOrBool(
-                new WallEColor(pixelColor.R, pixelColor.G, pixelColor.B, pixelColor.A) == targetColor);
+            var pixelSkColor = _skBitmap.GetPixel(cx, cy);
+            var pixelWallEColor = new WallEColor(pixelSkColor.Red, pixelSkColor.Green, pixelSkColor.Blue,
+                pixelSkColor.Alpha);
+            return new IntegerOrBool(pixelWallEColor == targetWallEColor);
         }
 
         if (expr.CalledFunction == "GetColorCount")
         {
-            var searchColorStr =
-                ConvertToString(evaluatedArgs[0], expr.Arguments[0].Location, "color para GetColorCount");
-            var rX = ConvertToInt(evaluatedArgs[1], expr.Arguments[1].Location, "x para GetColorCount");
-            var rY = ConvertToInt(evaluatedArgs[2], expr.Arguments[2].Location, "y para GetColorCount");
-            var rW = ConvertToInt(evaluatedArgs[3], expr.Arguments[3].Location, "width para GetColorCount");
-            var rH = ConvertToInt(evaluatedArgs[4], expr.Arguments[4].Location, "height para GetColorCount");
+            var searchColorStr = ConvertToString(evaluatedArgs[0], expr.Arguments[0].Location,
+                "color for GetColorCount");
+            var rX = ConvertToInt(evaluatedArgs[1], expr.Arguments[1].Location, "x for GetColorCount");
+            var rY = ConvertToInt(evaluatedArgs[2], expr.Arguments[2].Location, "y for GetColorCount");
+            var rW = ConvertToInt(evaluatedArgs[3], expr.Arguments[3].Location, "width for GetColorCount");
+            var rH = ConvertToInt(evaluatedArgs[4], expr.Arguments[4].Location, "height for GetColorCount");
 
             if (!WallEColor.TryParse(searchColorStr, out var targetSColor))
                 throw new RuntimeErrorException(new RuntimeError(expr.Arguments[0].Location,
-                    $"String de color inválido '{searchColorStr}' para GetColorCount."));
+                    $"Invalid color string '{searchColorStr}' for GetColorCount."));
+
+            var targetSkSColor = ToSkiaColor(targetSColor);
 
             if (rW <= 0 || rH <= 0) return new IntegerOrBool(0);
-
             var count = 0;
             var startX = Math.Max(0, rX);
             var startY = Math.Max(0, rY);
-            var endX = Math.Min(_canvas.Width, rX + rW);
-            var endY = Math.Min(_canvas.Height, rY + rH);
+            var endX = Math.Min(_skBitmap.Width, rX + rW);
+            var endY = Math.Min(_skBitmap.Height, rY + rH);
 
             for (var ix = startX; ix < endX; ix++)
             for (var iy = startY; iy < endY; iy++)
-            {
-                var pxColor = _canvas.GetPixel(ix, iy);
-                if (new WallEColor(pxColor.R, pxColor.G, pxColor.B, pxColor.A) == targetSColor) count++;
-            }
-
+                if (_skBitmap.GetPixel(ix, iy) == targetSkSColor)
+                    count++;
             return new IntegerOrBool(count);
         }
 
         throw new RuntimeErrorException(new RuntimeError(expr.Location,
-            $"Función no definida '{expr.CalledFunction}'."));
+            $"Function '{expr.CalledFunction}' not defined."));
     }
 }
