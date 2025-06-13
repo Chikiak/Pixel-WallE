@@ -1,5 +1,4 @@
-Spawn(100,100)
+Spawn(5,5)
 Color("red")
-Size(100)
-#DrawLine(1,0,200)
-Fill()
+Size(3)
+DrawCircle(1,1,3)

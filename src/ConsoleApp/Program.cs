@@ -91,7 +91,7 @@ static class Program
         Console.WriteLine(printer.Print(programResult.Value));
 
         var interpreter = new Interpreter("E:\\Proyectos\\PixelWallE\\src\\ConsoleApp\\CodigoPrueba\\output.png",
-            defaultHeight: 1000, defaultWidth: 1000);
+            defaultHeight: 30, defaultWidth: 30);
         var result = interpreter.Interpret(programResult.Value);
 
         if (!result.IsSuccess)

@@ -1,0 +1,11 @@
+Spawn(2,2)
+Color("red")
+Size(3)
+
+DrawLine(1,0,3)
+Color("Blue")
+DrawLine(1,0,2)
+Color("Black")
+DrawLine(1,0,1)
+Color("Blue")
+DrawLine(0,1,2)

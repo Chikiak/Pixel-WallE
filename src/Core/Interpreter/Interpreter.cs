@@ -56,7 +56,7 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         _skCanvas = new SKCanvas(_skBitmap);
         _skPaint = new SKPaint
         {
-            IsAntialias = true,
+            IsAntialias = false,
             StrokeWidth = _currentSize,
             Color = ToSkiaColor(_currentColor)
         };
@@ -154,7 +154,7 @@ public class Interpreter : IInterpreter, IVisitor<object?>
 
     private object Evaluate(Expr expr)
     {
-        return expr.Accept(this);
+        return expr.Accept(this) ?? throw new InvalidOperationException();
     }
 
     private SKColor ToSkiaColor(WallEColor c)
@@ -254,17 +254,22 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         if (Math.Abs(dirX) > 1 || Math.Abs(dirY) > 1 || (dirX == 0 && dirY == 0 && distance != 0))
             throw new RuntimeErrorException(new RuntimeError(stmt.Location, "Invalid direction for DrawLine."));
 
-        var startSkPoint = new SKPoint(_currentWallEPosition.X, _currentWallEPosition.Y);
-        var endSkPoint = new SKPoint(_currentWallEPosition.X + dirX * distance,
-            _currentWallEPosition.Y + dirY * distance);
+        var color = ToSkiaColor(_currentColor);
+        for (var i = 0; i < distance; i++)
+        {
+            var currentX = (int)_currentWallEPosition.X + dirX * i;
+            var currentY = (int)_currentWallEPosition.Y + dirY * i;
+            DrawPixel(currentX, currentY, color);
+        }
 
-        _skPaint.Style = SKPaintStyle.Stroke;
-        _skCanvas.DrawLine(startSkPoint, endSkPoint, _skPaint);
-
-        _currentWallEPosition = new SKPoint((int)endSkPoint.X, (int)endSkPoint.Y);
+        _currentWallEPosition = new SKPoint(
+            _currentWallEPosition.X + dirX * (distance > 0 ? distance : 0),
+            _currentWallEPosition.Y + dirY * (distance > 0 ? distance : 0)
+        );
+    
         return null;
     }
-
+   
     public object? VisitDrawCircleStmt(DrawCircleStmt stmt)
     {
         var dirX = ConvertToInt(Evaluate(stmt.DirX), stmt.DirX.Location, "DirX for circle center");
@@ -277,15 +282,25 @@ public class Interpreter : IInterpreter, IVisitor<object?>
             throw new RuntimeErrorException(new RuntimeError(stmt.DirX.Location,
                 "DirX/DirY for circle center offset must be -1, 0, or 1."));
 
-        var circleCenter = new SKPoint(_currentWallEPosition.X + dirX, _currentWallEPosition.Y + dirY);
+        var circleCenter =
+            new SKPoint(_currentWallEPosition.X + dirX * radius, _currentWallEPosition.Y + dirY * radius);
 
-        _skPaint.Style = _isFilling ? SKPaintStyle.Fill : SKPaintStyle.Stroke;
-        _skCanvas.DrawOval(circleCenter.X, circleCenter.Y, radius, radius, _skPaint);
+        if (_isFilling)
+        {
+            FillCircle((int)circleCenter.X, (int)circleCenter.Y, radius);
+            ;
+        }
+        else
+        {
+            DrawCircle((int)circleCenter.X, (int)circleCenter.Y, radius);
+        }
 
         _currentWallEPosition = new SKPoint((int)circleCenter.X, (int)circleCenter.Y);
+
         return null;
     }
 
+    // Reemplaza este método por completo
     public object? VisitDrawRectangleStmt(DrawRectangleStmt stmt)
     {
         var dirX = ConvertToInt(Evaluate(stmt.DirX), stmt.DirX.Location, "DirX");
@@ -301,15 +316,18 @@ public class Interpreter : IInterpreter, IVisitor<object?>
             throw new RuntimeErrorException(new RuntimeError(stmt.Location, "Invalid direction for DrawRectangle."));
 
         var topLeft = new SKPoint(_currentWallEPosition.X + dirX * distance, _currentWallEPosition.Y + dirY * distance);
-        var skRect = SKRect.Create(topLeft, new SKSize(width, height));
+        var startX = (int)topLeft.X;
+        var startY = (int)topLeft.Y;
 
-        _skPaint.Style = _isFilling ? SKPaintStyle.Fill : SKPaintStyle.Stroke;
-        _skCanvas.DrawRect(skRect, _skPaint);
+        if (_isFilling)
+            FillRectangleManually(startX, startY, width, height);
+        else
+            DrawRectangleManually(startX, startY, width, height);
+        _currentWallEPosition = new SKPoint(startX + width / 2, startY + height / 2);
 
-        _currentWallEPosition = new SKPoint((int)(topLeft.X + width / 2), (int)(topLeft.Y + height / 2));
         return null;
     }
-
+    
     public object? VisitFillStmt(FillStmt stmt)
     {
         var targetSkColor = _skBitmap.GetPixel((int)_currentWallEPosition.X, (int)_currentWallEPosition.Y);
@@ -603,5 +621,126 @@ public class Interpreter : IInterpreter, IVisitor<object?>
 
         throw new RuntimeErrorException(new RuntimeError(expr.Location,
             $"Function '{expr.CalledFunction}' not defined."));
+    }
+
+    private void DrawPixel(int cx, int cy, SKColor color)
+    {
+        var offset = _currentSize / 2;
+        var startX = cx - offset;
+        var startY = cy - offset;
+
+        var endX = Math.Min(_skBitmap.Width, startX + _currentSize);
+        var endY = Math.Min(_skBitmap.Height, startY + _currentSize);
+        startX = Math.Max(0, startX);
+        startY = Math.Max(0, startY);
+
+
+        for (var x = startX; x < endX; x++)
+        for (var y = startY; y < endY; y++)
+        {
+            if (!IsInBounds(x, y)) continue;
+            var canvasColor = _skBitmap.GetPixel(x, y);
+            var skColor = BlendColors(canvasColor, color);
+            _skBitmap.SetPixel(x, y, skColor);
+        }
+    }
+
+    private SKColor BlendColors(SKColor canvasColor, SKColor newColor)
+    {
+        var blendedRed = (byte)((newColor.Alpha * newColor.Red + (255 - newColor.Alpha) * canvasColor.Red) / 255);
+        var blendedGreen = (byte)((newColor.Alpha * newColor.Green + (255 - newColor.Alpha) * canvasColor.Green) / 255);
+        var blendedBlue = (byte)((newColor.Alpha * newColor.Blue + (255 - newColor.Alpha) * canvasColor.Blue) / 255);
+        return new SKColor(blendedRed, blendedGreen, blendedBlue, 255);
+    }
+
+    private bool IsInBounds(int x, int y)
+    {
+        return x >= 0 && x < _skBitmap.Width && y >= 0 && y < _skBitmap.Height;
+    }
+
+    private void DrawCircle(int centerX, int centerY, int radius)
+    {
+        var x = 0;
+        var y = radius;
+        var d = 3 - 2 * radius;
+        var color = ToSkiaColor(_currentColor);
+
+        while (y >= x)
+        {
+            DrawPixel(centerX + x, centerY + y, color);
+            DrawPixel(centerX - x, centerY + y, color);
+            DrawPixel(centerX + x, centerY - y, color);
+            DrawPixel(centerX - x, centerY - y, color);
+            DrawPixel(centerX + y, centerY + x, color);
+            DrawPixel(centerX - y, centerY + x, color);
+            DrawPixel(centerX + y, centerY - x, color);
+            DrawPixel(centerX - y, centerY - x, color);
+
+            x++;
+
+            if (d > 0)
+            {
+                y--;
+                d = d + 4 * (x - y) + 10;
+            }
+            else
+            {
+                d = d + 4 * x + 6;
+            }
+        }
+    }
+
+    private void DrawRectangleManually(int x, int y, int width, int height)
+    {
+        var color = ToSkiaColor(_currentColor);
+
+        for (var i = 0; i < width; i++) DrawPixel(x + i, y, color);
+        for (var i = 0; i < width; i++) DrawPixel(x + i, y + height - 1, color);
+        for (var i = 0; i < height; i++) DrawPixel(x, y + i, color);
+        for (var i = 0; i < height; i++) DrawPixel(x + width - 1, y + i, color);
+    }
+
+    private void FillRectangleManually(int x, int y, int width, int height)
+    {
+        var color = ToSkiaColor(_currentColor);
+
+        for (var j = 0; j < height; j++)
+        for (var i = 0; i < width; i++)
+            DrawPixel(x + i, y + j, color);
+    }
+
+    private void FillCircle(int centerX, int centerY, int radius)
+    {
+        var x = 0;
+        var y = radius;
+        var d = 3 - 2 * radius;
+        var color = ToSkiaColor(_currentColor);
+
+        while (y >= x)
+        {
+            DrawHorizontalLine(centerX - x, centerX + x, centerY + y, color);
+            DrawHorizontalLine(centerX - x, centerX + x, centerY - y, color);
+            DrawHorizontalLine(centerX - y, centerX + y, centerY + x, color);
+            DrawHorizontalLine(centerX - y, centerX + y, centerY - x, color);
+
+            x++;
+
+            if (d > 0)
+            {
+                y--;
+                d = d + 4 * (x - y) + 10;
+            }
+            else
+            {
+                d = d + 4 * x + 6;
+            }
+        }
+    }
+
+    private void DrawHorizontalLine(int x0, int x1, int y, SKColor color)
+    {
+        if (x0 > x1) (x0, x1) = (x1, x0);
+
+        for (var x = x0; x <= x1; x++) DrawPixel(x, y, color);
     }
 }

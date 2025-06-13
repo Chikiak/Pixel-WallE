@@ -429,13 +429,7 @@ public class Parser : IParser
 
     private Expr ParsePrimary()
     {
-        if (Match(TokenType.True))
-            return new LiteralExpr(new LiteralValue(true, typeof(IntegerOrBool)), Previous().Location);
-
-        if (Match(TokenType.False))
-            return new LiteralExpr(new LiteralValue(false, typeof(IntegerOrBool)), Previous().Location);
-
-        if (Match(TokenType.Number))
+        if (Match(TokenType.Number, TokenType.True, TokenType.False))
         {
             var token = Previous();
             return new LiteralExpr(new LiteralValue(token.Literal, typeof(IntegerOrBool)), token.Location);

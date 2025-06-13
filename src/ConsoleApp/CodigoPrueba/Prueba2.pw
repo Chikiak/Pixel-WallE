@@ -1,0 +1,36 @@
+Spawn(0,0)
+Color("blue")
+Size(1)
+
+
+i <- 20
+b <- true
+
+GoTo[comenzar_circulo](true)
+
+
+
+circulo_azul
+Color("#800000FF")
+DrawCircle(1,1,4)
+i <- i - 1
+GoTo[circulo_terminado](true)
+
+
+
+circulo_rojo
+Color("#80FF0000")
+DrawCircle(1,1,2)
+i <- i - 1
+GoTo[circulo_terminado](true)
+
+
+
+circulo_terminado
+Color("transparent")
+DrawLine(1,1,2)
+
+
+comenzar_circulo
+GoTo[circulo_azul](i >= 0 and i%2 == 0)
+GoTo[circulo_rojo](i >= 0 and i%2 == 1)
