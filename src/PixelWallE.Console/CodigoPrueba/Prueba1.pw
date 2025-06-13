@@ -1,0 +1,11 @@
+Spawn(2,2)
+Color("#800000FF")
+Size(3)
+
+DrawLine(1,0,4)
+Color("#8000FF00")
+DrawLine(1,0,3)
+Color("#80FF0000")
+DrawLine(1,0,1)
+Color("#adaf89ab")
+DrawLine(0,1,5)

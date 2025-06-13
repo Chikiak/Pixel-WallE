@@ -2,9 +2,9 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp", "src\ConsoleApp\ConsoleApp.csproj", "{F598382D-C8F4-4ED8-8429-0EDB98DA8912}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelWallE.Console", "src\PixelWallE.Console\PixelWallE.Console.csproj", "{F598382D-C8F4-4ED8-8429-0EDB98DA8912}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\Core\Core.csproj", "{D8D1F2E4-6E5F-47C9-BD54-FBEC84951B3E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelWallE.Core", "src\PixelWallE.Core\PixelWallE.Core.csproj", "{D8D1F2E4-6E5F-47C9-BD54-FBEC84951B3E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

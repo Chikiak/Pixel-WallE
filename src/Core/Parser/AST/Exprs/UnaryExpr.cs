@@ -1,8 +1,0 @@
-using Core.Common;
-
-namespace Core.Parser.AST.Exprs;
-
-public abstract class UnaryExpr(Expr right, CodeLocation location) : Expr(location)
-{
-    public Expr Right { get; private set; } = right;
-}
