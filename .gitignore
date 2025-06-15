@@ -1,57 +1,177 @@
+# 1. COMPILACIÓN Y BINARIOS
 [Bb]in/
 [Oo]bj/
-/packages/
-riderModule.iml
-/_ReSharper.Caches/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]uild[Ll]og.*
+*.binlog
 
-# Visual Studio
+# 2. PAQUETES Y DEPENDENCIAS
+/packages/
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# 3. VISUAL STUDIO
+*.rsuser
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
 .vs/
+*.userprefs
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.cache
+*.tlog
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
 
-# JetBrains Rider
+# 4. JETBRAINS RIDER
 *.sln.DotSettings.user
 .idea/
-
-# Visual Studio Code
-.vscode/
-
-# 3. ARCHIVOS ESPECÍFICOS DEL PROYECTO
-# Ignora los archivos generados por tu aplicación durante la ejecución.
-# En tu caso, el 'output.png' que se genera en el directorio de binarios.
-# Esta regla es por si lo generas en otro lugar.
-output.png
-
-# 4. PAQUETES Y DEPENDENCIAS
-# Ignora los paquetes NuGet generados y carpetas de paquetes antiguas.
-*.nupkg
-*.snupkg
-packages/
-
-# ReSharper (otro producto de JetBrains)
+riderModule.iml
+/_ReSharper.Caches/
 _ReSharper*/
 *.[Rr]e[Ss]harper
+*.DotSettings.user
 
-# 5. ARCHIVOS DE SISTEMA OPERATIVO
-# Archivos temporales generados por macOS, Windows y Linux.
+# 5. VISUAL STUDIO CODE
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
+# 6. WPF Y XAML ESPECÍFICOS
+*.g.cs
+*.g.i.cs
+*.baml
+GeneratedInternalTypeHelper.cs
+*.designer.cs
+*.Designer.cs
+*.designer
+*.Designer
+*.xamlbin
+
+# 7. WEBVIEW2 (para Monaco Editor)
+WebView2/
+**/runtimes/win-*/native/WebView2Loader.dll
+**/WebView2/
+
+# 8. BUILD Y PUBLISH
+publish/
+PublishProfiles/
+*.publish.xml
+*.pubxml
+*.pubxml.user
+*.publishproj
+FolderProfile.pubxml
+
+# 9. TEST RESULTS
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+[Dd]ebugPS/
+[Rr]eleasePS/
+coverage*.xml
+coverage*.json
+*.coverage
+*.coveragexml
+
+# 10. ARCHIVOS ESPECÍFICOS DEL PROYECTO
+# Ignora los archivos generados por tu aplicación durante la ejecución
+output.png
+*.pw.png
+**/CodigoPrueba/output/*
+
+# 11. ARCHIVOS DE SISTEMA OPERATIVO
 # macOS
 .DS_Store
 .AppleDouble
 .LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
 
 # Windows
 Thumbs.db
 ehthumbs.db
 [Dd]esktop.ini
+$RECYCLE.BIN/
+*.stackdump
 
 # Linux
 *~
+.fuse_hidden*
+.directory
+.Trash-*
 
-# 6. ARCHIVOS DE LOGS Y CACHÉ
-# Ignora archivos de registro y cachés de herramientas.
-*.log
-*.cache
-*.tlog
+# 12. ARCHIVOS TEMPORALES Y CACHÉ
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.#*
+#*#
+.vscode-test
+
+# 13. MONO/XAMARIN
+mono_crash.*
+*.mdb
+
+# 14. DOTNET CORE
+project.lock.json
+project.fragment.lock.json
+artifacts/
+**/Properties/launchSettings.json
+
+# 15. ENTITY FRAMEWORK
+*.edmx.diagram
+*.edmx.designer.cs
+migrations/
+
+# 16. SECRETS Y CONFIGURACIÓN
+appsettings.local.json
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+secrets.json
+.env
+.env.local
+.env.*.local
+
+# 17. HERRAMIENTAS Y UTILIDADES
+.axoCover/*
+!.axoCover/settings.json
+.ncrunch*
+.*crunch*.local.xml
+nCrunchTemp_*
+*.mm.*
+AutoTest.Net/
+.sass-cache/
+[Ee]xpress/
+DocProject/buildhelp/
+DocProject/Help/*.HxT
+DocProject/Help/*.HxC
+DocProject/Help/*.hhc
+DocProject/Help/*.hhk
+DocProject/Help/*.hhp
+DocProject/Help/Html2
+DocProject/Help/html
