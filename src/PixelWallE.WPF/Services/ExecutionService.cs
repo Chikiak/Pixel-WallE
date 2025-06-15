@@ -1,20 +1,19 @@
+using System.IO;
 using PixelWallE.Core.Common;
+using PixelWallE.Core.Errors;
 using PixelWallE.Core.Interpreter;
 using PixelWallE.Core.Parser.AST;
-using PixelWallE.Core.Errors;
 using SkiaSharp;
-using System;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace PixelWallE.WPF.Services;
 
 public interface IExecutionService
 {
-    Task<Result<SKBitmap>> ExecuteAsync(ProgramStmt programAst, int width = 500, int height = 500);
-    Result<SKBitmap> Execute(ProgramStmt programAst, int width = 500, int height = 500);
+    Task<ExecutionOutcome> ExecuteAsync(ProgramStmt programAst, int width, int height, string? backgroundImagePath);
+    ExecutionOutcome Execute(ProgramStmt programAst, int width, int height, string? backgroundImagePath);
 }
 
+// --- La implementación se adapta a la nueva lógica ---
 public class ExecutionService : IExecutionService
 {
     private readonly string _tempDirectory;
@@ -24,17 +23,17 @@ public class ExecutionService : IExecutionService
         _tempDirectory = Path.GetTempPath();
     }
 
-    public async Task<Result<SKBitmap>> ExecuteAsync(ProgramStmt programAst, int width = 500, int height = 500)
+    public async Task<ExecutionOutcome> ExecuteAsync(ProgramStmt programAst, int width, int height, string? backgroundImagePath)
     {
-        return await Task.Run(() => Execute(programAst, width, height));
+        return await Task.Run(() => Execute(programAst, width, height, backgroundImagePath));
     }
 
-    public Result<SKBitmap> Execute(ProgramStmt programAst, int width = 500, int height = 500)
+    public ExecutionOutcome Execute(ProgramStmt programAst, int width, int height, string? backgroundImagePath)
     {
         if (programAst == null)
         {
-            return Result<SKBitmap>.Failure(
-                new RuntimeError(new CodeLocation(0, 0), "Program AST cannot be null"));
+            var error = new RuntimeError(new CodeLocation(0, 0), $"Argument '{nameof(programAst)}' cannot be null.");
+            return new ExecutionOutcome(null, new List<Error> { error });
         }
 
         var tempImagePath = Path.Combine(_tempDirectory, $"pixelwalle_{Guid.NewGuid()}.png");
@@ -42,9 +41,12 @@ public class ExecutionService : IExecutionService
 
         try
         {
-            var interpreter = new Interpreter(tempImagePath, null,height, width);
+            var interpreter = new Interpreter(tempImagePath, backgroundImagePath, height, width);
             var interpretResult = interpreter.Interpret(programAst);
 
+            // Intentamos cargar la imagen generada, incluso si hubo errores.
+            // El intérprete guarda el archivo antes de devolver el resultado,
+            // por lo que una imagen parcial podría existir.
             if (File.Exists(tempImagePath))
             {
                 try
@@ -53,42 +55,41 @@ public class ExecutionService : IExecutionService
                 }
                 catch (Exception ex)
                 {
-                    return Result<SKBitmap>.Failure(
-                        new RuntimeError(programAst.Location, $"Failed to decode generated image: {ex.Message}"));
+                    // Si la decodificación falla, agregamos un nuevo error y continuamos.
+                    var decodeError = new RuntimeError(programAst.Location, $"Failed to decode the generated image: {ex.Message}");
+                    var allErrors = interpretResult.Errors.ToList();
+                    allErrors.Add(decodeError);
+                    return new ExecutionOutcome(null, allErrors);
                 }
             }
 
-            // Manejar errores de interpretación
+            // --- LÓGICA CLAVE MODIFICADA ---
             if (!interpretResult.IsSuccess)
             {
-                // Si hay una imagen parcial, la devolvemos junto con los errores
-                if (resultBitmap != null)
-                {
-                    // En una implementación más avanzada, podríamos devolver tanto la imagen como los errores
-                    // Por ahora, priorizamos los errores
-                    resultBitmap?.Dispose();
-                    return Result<SKBitmap>.Failure(interpretResult.Errors);
-                }
-                return Result<SKBitmap>.Failure(interpretResult.Errors);
+                // ¡Falló! Pero devolvemos un ExecutionOutcome que contiene
+                // tanto la imagen parcial (si se cargó) como los errores.
+                // El consumidor (ViewModel) decidirá qué hacer con ambos.
+                return new ExecutionOutcome(resultBitmap, interpretResult.Errors);
             }
 
             if (resultBitmap == null)
             {
-                return Result<SKBitmap>.Failure(
-                    new RuntimeError(programAst.Location, "Execution completed but no image was generated"));
+                var noImageError = new RuntimeError(programAst.Location, "Execution completed successfully, but no image was generated.");
+                return new ExecutionOutcome(null, new List<Error> { noImageError });
             }
 
-            return Result<SKBitmap>.Success(resultBitmap);
+            // ¡Éxito! Devolvemos la imagen completa sin errores.
+            return new ExecutionOutcome(resultBitmap, Array.Empty<Error>());
         }
         catch (Exception ex)
         {
-            resultBitmap?.Dispose();
-            return Result<SKBitmap>.Failure(
-                new RuntimeError(programAst.Location, $"Execution failed with exception: {ex.Message}"));
+            resultBitmap?.Dispose(); // Limpiar si una excepción ocurrió antes de devolver.
+            var unhandledError = new RuntimeError(programAst.Location, $"Execution failed with an unhandled exception: {ex.Message}");
+            return new ExecutionOutcome(null, new List<Error> { unhandledError });
         }
         finally
         {
-            // Limpiar archivo temporal
+            // La limpieza del archivo temporal no cambia.
             try
             {
                 if (File.Exists(tempImagePath))
@@ -96,10 +97,7 @@ public class ExecutionService : IExecutionService
                     File.Delete(tempImagePath);
                 }
             }
-            catch
-            {
-                // Ignorar errores de limpieza
-            }
+            catch { /* Ignorar errores de limpieza */ }
         }
     }
 }

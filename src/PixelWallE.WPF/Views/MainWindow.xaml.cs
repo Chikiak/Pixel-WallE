@@ -21,4 +21,8 @@ public partial class MainWindow : Window
         }
         base.OnClosed(e);
     }
+    private void Exit_Click(object sender, RoutedEventArgs e)
+    {
+        Application.Current.Shutdown();
+    }
 }
