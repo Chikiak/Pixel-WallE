@@ -1,6 +1,6 @@
-using PixelWallE.Core.Parser.AST;
-using PixelWallE.Core.Parser.AST.Exprs;
-using PixelWallE.Core.Parser.AST.Stmts;
+using PixelWallE.Core.Parsers.AST;
+using PixelWallE.Core.Parsers.AST.Exprs;
+using PixelWallE.Core.Parsers.AST.Stmts;
 
 namespace PixelWallE.Core.Common;
 

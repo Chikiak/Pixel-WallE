@@ -1,19 +1,18 @@
-﻿<!-- File: src/PixelWallE.WPF/Views/MainWindow.xaml -->
-<Window x:Class="PixelWallE.WPF.Views.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
-        xmlns:viewModels="clr-namespace:PixelWallE.WPF.ViewModels"
-        xmlns:behaviors="clr-namespace:PixelWallE.WPF.Behaviors"
-        xmlns:converters="clr-namespace:PixelWallE.WPF.Converters"
-        mc:Ignorable="d"
-        Title="{Binding WindowTitle}" 
-        Height="800" Width="1400"
-        MinHeight="600" MinWidth="1000"
-        WindowStartupLocation="CenterScreen"
-        Background="#F0F2F5">
+﻿<Window x:Class="PixelWallE.WPF.Views.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
+    xmlns:viewModels="clr-namespace:PixelWallE.WPF.ViewModels"
+    xmlns:behaviors="clr-namespace:PixelWallE.WPF.Behaviors"
+    xmlns:converters="clr-namespace:PixelWallE.WPF.Converters"
+    mc:Ignorable="d"
+    Title="{Binding WindowTitle}" 
+    Height="800" Width="1400"
+    MinHeight="600" MinWidth="1000"
+    WindowStartupLocation="CenterScreen"
+    Background="#F0F2F5">
     
     <Window.DataContext>
         <viewModels:MainViewModel/>
@@ -23,6 +22,12 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisConverter"/>
         <converters:StringContainsConverter x:Key="StringContainsConverter"/>
+        
+        <x:Array x:Key="ExecutionModes" Type="viewModels:ExecutionMode">
+            <viewModels:ExecutionMode>Instant</viewModels:ExecutionMode>
+            <viewModels:ExecutionMode>StepByStep</viewModels:ExecutionMode>
+            <viewModels:ExecutionMode>PixelByPixel</viewModels:ExecutionMode>
+        </x:Array>
     </Window.Resources>
 
     <Grid Margin="10">
@@ -46,13 +51,15 @@
                 <MenuItem Header="E_xit" Click="Exit_Click"/>
             </MenuItem>
             <MenuItem Header="_Image">
-                 <MenuItem Header="Save Image _As..." Command="{Binding SaveImageCommand}"/>
-                 <MenuItem Header="Load _Background..." Command="{Binding LoadBackgroundImageCommand}"/>
-                 <MenuItem Header="Clear Background" Command="{Binding ClearBackgroundImageCommand}"/>
+                <MenuItem Header="Save Image _As..." Command="{Binding SaveImageCommand}"/>
+                <MenuItem Header="Load _Background..." Command="{Binding LoadBackgroundImageCommand}"/>
+                <MenuItem Header="Clear Background" Command="{Binding ClearBackgroundImageCommand}"/>
             </MenuItem>
             <MenuItem Header="_Edit">
                 <MenuItem Header="Clear _Output" Command="{Binding ClearOutputCommand}"/>
                 <MenuItem Header="Reset _Code" Command="{Binding ResetCodeCommand}"/>
+                <!-- NUEVO: Agregar Reset Canvas al menú -->
+                <MenuItem Header="Reset _Canvas" Command="{Binding ResetCanvasCommand}"/>
             </MenuItem>
         </Menu>
 
@@ -66,12 +73,27 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
+                <!-- CORRECCIÓN: Agregar botón Reset Canvas en la toolbar -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Button Content="▶ Run" Padding="20,8" FontWeight="Bold" Command="{Binding RunCommand}" Background="#28A745" Foreground="White"/>
+                    <Button Content="▶ Run" Padding="20,8" FontWeight="Bold" Command="{Binding RunCommand}" Background="#28A745" Foreground="White"
+                            Visibility="{Binding IsExecuting, Converter={StaticResource InverseBoolToVisConverter}}"/>
+                    <Button Content="■ Stop" Padding="20,8" FontWeight="Bold" Command="{Binding StopExecutionCommand}" Background="#DC3545" Foreground="White"
+                            Visibility="{Binding IsExecuting, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    
+                    <!-- NUEVO: Botón Reset Canvas -->
+                    <Button Content="🎨 Reset Canvas" Padding="15,8" Margin="10,0,0,0" Command="{Binding ResetCanvasCommand}" 
+                            Background="#6C757D" Foreground="White" ToolTip="Clear the canvas and start fresh"/>
+
+                    <ComboBox Margin="15,0,5,0" VerticalAlignment="Center" Width="120"
+                              ItemsSource="{Binding Source={StaticResource ExecutionModes}}"
+                              SelectedItem="{Binding SelectedExecutionMode}"/>
+                    <Slider Minimum="0" Maximum="500" Width="100" VerticalAlignment="Center"
+                            Value="{Binding ExecutionDelay, Delay=100}"/>
+                    <TextBlock Text="{Binding ExecutionSpeedText}" VerticalAlignment="Center" Margin="5,0,0,0" FontStyle="Italic" Foreground="#6C757D"/>
                 </StackPanel>
                 
                 <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" VerticalAlignment="Center" Margin="10,0" HorizontalAlignment="Center" FontStyle="Italic" Foreground="#6C757D"/>
-                           
+                
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="BG:" ToolTip="{Binding BackgroundImagePath}" VerticalAlignment="Center" Margin="0,0,5,0"/>
                     <Image Source="{Binding BackgroundPreview}" Width="24" Height="24" Margin="0,0,15,0" RenderOptions.BitmapScalingMode="HighQuality"/>
@@ -93,7 +115,7 @@
 
             <!-- Code Editor -->
             <Border Grid.Column="0" Margin="0,0,5,0" Background="White" BorderBrush="#DEE2E6" BorderThickness="1" CornerRadius="4">
-                 <avalonedit:TextEditor
+                <avalonedit:TextEditor
                     FontFamily="Cascadia Code, Consolas, 'Courier New', monospace"
                     FontSize="14"
                     behaviors:TextEditorBehavior.BoundText="{Binding SourceCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
@@ -134,9 +156,11 @@
                     
                     <Image Source="{Binding RenderedImage}" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
                     
+                    <!-- CORRECCIÓN: Mejorar el overlay de ejecución -->
                     <Border Background="#80000000" Visibility="{Binding IsExecuting, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock Text="⚙ Executing..." Foreground="White" FontSize="16" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Press Stop to cancel" Foreground="LightGray" FontSize="12" HorizontalAlignment="Center" Margin="0,5,0,0"/>
                             <ProgressBar IsIndeterminate="True" Width="200" Height="4" Margin="0,10,0,0" BorderThickness="0"/>
                         </StackPanel>
                     </Border>
@@ -167,7 +191,7 @@ Click 'Run' to execute your code."
         <GridSplitter Grid.Row="3" Height="10" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent"/>
 
         <!-- Output Console -->
-        <GroupBox Grid.Row="4" Header="Output Console" Margin="0,5,0,0" Background="White" BorderBrush="#DEE2E6" BorderThickness="1"> <!-- SOLUCIÓN #3: CornerRadius quitado -->
+        <GroupBox Grid.Row="4" Header="Output Console" Margin="0,5,0,0" Background="White" BorderBrush="#DEE2E6" BorderThickness="1" >
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <ListBox ItemsSource="{Binding Messages}" 
                          FontFamily="Cascadia Code, Consolas, 'Courier New', monospace"
@@ -188,6 +212,10 @@ Click 'Run' to execute your code."
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Path=., Converter={StaticResource StringContainsConverter}, ConverterParameter='🖼️'}" Value="True">
                                     <Setter Property="Foreground" Value="#17A2B8"/>
+                                </DataTrigger>
+                                <!-- NUEVO: Estilo para mensajes de canvas reset -->
+                                <DataTrigger Binding="{Binding Path=., Converter={StaticResource StringContainsConverter}, ConverterParameter='🎨'}" Value="True">
+                                    <Setter Property="Foreground" Value="#6F42C1"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>

@@ -1,51 +1,58 @@
-﻿using PixelWallE.Core.DevUtils;
+﻿using PixelWallE.Core.Drawing;
 using PixelWallE.Core.Errors;
-using PixelWallE.Core.Interpreter;
-using PixelWallE.Core.Lexing;
-using PixelWallE.Core.Parser;
+using PixelWallE.Core.Parsers.AST;
+using PixelWallE.Core.Services;
+using SkiaSharp;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ConsoleWall_e;
 
 static class Program
 {
-    static List<Error> Errors = [];
-    static void Main(string[] args)
+    static List<Error> Errors = new List<Error>();
+
+    // Main sigue siendo asíncrono
+    static async Task Main(string[] args)
     {
         Errors.Clear();
-        // Verificar si se proporcionó un argumento
         if (args.Length != 1)
         {
             Console.WriteLine("Uso: ConsoleWall-e.exe <ruta_del_archivo>");
             return;
         }
         string filePath = args[0];
-        RunFile(filePath);
-        foreach (var error in Errors)
+        await RunFileAsync(filePath);
+
+        if (Errors.Count > 0)
         {
-            Console.WriteLine(error.ToString());
+            Console.WriteLine("\n--- Errors ---");
+            foreach (var error in Errors)
+            {
+                Console.WriteLine(error.ToString());
+            }
         }
-            
     }
-        
-    private static void RunFile(string filePath)
+
+    private static async Task RunFileAsync(string filePath)
     {
         try
         {
-            // Comprobar si el archivo existe
             if (!File.Exists(filePath))
             {
-                Errors.Add(new ImportError($"El archivo {filePath} no existe."));
+                Errors.Add(new ImportError($"El archivo '{filePath}' no existe."));
                 return;
             }
-
             if (!filePath.EndsWith(".pw"))
             {
-                Errors.Add(new ImportError($"El archivo {filePath} no es compatible, debe ser .pw"));
+                Errors.Add(new ImportError($"El archivo '{filePath}' no es compatible, debe ser .pw"));
                 return;
             }
-            string fileContent = File.ReadAllText(filePath);
-            Run(fileContent);
-            return;
+            string fileContent = await File.ReadAllTextAsync(filePath);
+            await RunAsync(fileContent);
         }
         catch (Exception ex)
         {
@@ -53,52 +60,100 @@ static class Program
         }
     }
 
-    private static void Run(string code)
+    // ACTUALIZADO: RunAsync ahora usa IProgress<DrawingUpdate>
+    private static async Task RunAsync(string code)
     {
-        var lexer = new Lexer(code);
-        var tokensResult = lexer.ScanTokens();
+        var compilerService = new CompilerService();
+        var compileResult = compilerService.Compile(code);
 
-        if (!tokensResult.IsSuccess)
+        if (!compileResult.IsSuccess)
         {
-            Errors.AddRange(tokensResult.Errors);
+            Errors.AddRange(compileResult.Errors);
             return;
         }
 
+        var programAst = compileResult.Value;
+        var executionService = new ExecutionService();
+        SKBitmap? finalBitmap = null;
 
-        var parser = new Parser();
-        var programResult = parser.Parse(tokensResult.Value);
-        Console.WriteLine("Parser terminó");
+        // Seguimos usando TaskCompletionSource para esperar a que la ejecución asíncrona termine.
+        var tcs = new TaskCompletionSource<bool>();
 
+        Console.WriteLine("Executing...");
 
-        if (!programResult.IsSuccess)
+        // Se crea un manejador para IProgress<DrawingUpdate>.
+        // Este se ejecutará cada vez que el intérprete reporte un progreso.
+        var progressHandler = new Progress<DrawingUpdate>(update =>
         {
-            Errors.AddRange(programResult.Errors);
-            return;
+            // Para una app de consola, solo nos interesan los estados finales.
+            // Opcional: mostrar actividad para los pasos intermedios.
+            if (update.Type == DrawingUpdateType.Step)
+            {
+                Console.Write(".");
+            }
+
+            // Cuando la ejecución termina (ya sea por completarse o por un error),
+            // capturamos el resultado y señalamos al TaskCompletionSource.
+            if (update.Type == DrawingUpdateType.Complete || update.Type == DrawingUpdateType.Error)
+            {
+                Console.WriteLine(); // Salto de línea después de los puntos de progreso.
+                finalBitmap = update.Bitmap?.Copy();
+                if (update.Errors != null)
+                {
+                    Errors.AddRange(update.Errors);
+                }
+                
+                // Si el update es de error y trae un mensaje, lo añadimos como error genérico.
+                // Útil para errores como el límite de ejecución.
+                if (update.Type == DrawingUpdateType.Error && !string.IsNullOrEmpty(update.Message) && (update.Errors == null || !update.Errors.Any()))
+                {
+                    Errors.Add(new RuntimeError(new PixelWallE.Core.Common.CodeLocation(0,0), update.Message));
+                }
+
+                tcs.TrySetResult(true);
+            }
+        });
+            
+        // Inicia la ejecución con la nueva firma del método, pasando el progress handler.
+        await executionService.ExecuteAsync(
+            programAst, 
+            null,       // Sin bitmap inicial
+            64,         // Ancho por defecto
+            64,         // Alto por defecto
+            progressHandler, 
+            CancellationToken.None);
+            
+        // Esperamos a que el progress handler nos avise que la ejecución ha terminado.
+        await tcs.Task;
+            
+        Console.WriteLine("Execution finished.");
+
+        // El guardado de la imagen permanece igual.
+        if (finalBitmap != null)
+        {
+            string outputPath = "E:\\Proyectos\\PixelWallE\\src\\PixelWallE.Console\\CodigoPrueba\\output.png";
+            try
+            {
+                using var image = SKImage.FromBitmap(finalBitmap);
+                using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+                using var stream = File.OpenWrite(outputPath);
+                
+                data.SaveTo(stream);
+                    
+                Console.WriteLine($"Image saved to {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                Errors.Add(new ImportError($"Failed to save image: {ex.Message}"));
+            }
+            finally
+            {
+                finalBitmap.Dispose();
+            }
         }
-
-        var semanticChecker = new CheckSemantic();
-        var semanticResult = semanticChecker.Analize(programResult.Value);
-
-        if (!semanticResult.IsSuccess)
+        else if (!Errors.Any())
         {
-            Errors.AddRange(semanticResult.Errors);
-            return;
-        }
-
-        // Imprimir el AST
-        var printer = new ASTPrinter();
-        Console.WriteLine("=== AST ===");
-        Console.WriteLine(printer.Print(programResult.Value));
-
-        var interpreter = new Interpreter(
-            "E:\\Proyectos\\PixelWallE\\src\\PixelWallE.Console\\CodigoPrueba\\output.png",
-            defaultHeight: 30, defaultWidth: 30);
-        var result = interpreter.Interpret(programResult.Value);
-
-        if (!result.IsSuccess)
-        {
-            Errors.AddRange(result.Errors);
-            return;
+            Console.WriteLine("Execution finished, but no image was generated.");
         }
     }
 }

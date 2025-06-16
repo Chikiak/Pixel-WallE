@@ -11,7 +11,7 @@ GoTo[comenzar_circulo](true)
 
 
 circulo_azul
-Color("#800000FF")
+Color("#8000adad")
 DrawCircle(1,1,3)
 i <- i - 1
 GoTo[circulo_terminado](true)
