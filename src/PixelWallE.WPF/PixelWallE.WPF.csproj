@@ -25,5 +25,8 @@
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="PixelWallE.xshd" />
+  </ItemGroup>
 
 </Project>

@@ -159,7 +159,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Code Editor -->
-            <Border Grid.Column="0" Margin="0,0,6,0" Background="White" 
+            <Border Grid.Column="0" Margin="0,0,6,0" Background="#1E1E1E" 
                     BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -168,21 +168,21 @@
                     </Grid.RowDefinitions>
                     
                     <!-- Editor Header -->
-                    <Border Grid.Row="0" Background="{StaticResource LightBrush}" 
+                    <Border Grid.Row="0" Background="#2D2D30" 
                             Padding="16,10" CornerRadius="8,8,0,0">
                         <TextBlock Text="📝 Code Editor" FontWeight="SemiBold" 
-                                   Foreground="{StaticResource TextBrush}"/>
+                                   Foreground="#CCCCCC"/>
                     </Border>
                     
                     <!-- Editor -->
-                    <avalonedit:TextEditor Grid.Row="1"
+                    <avalonedit:TextEditor x:Name="CodeEditor" Grid.Row="1"
                         FontFamily="Cascadia Code, Consolas, 'Courier New', monospace"
                         FontSize="14"
                         behaviors:TextEditorBehavior.BoundText="{Binding SourceCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         ShowLineNumbers="True"
-                        LineNumbersForeground="{StaticResource MutedBrush}"
+                        LineNumbersForeground="#6E7681"
                         Background="Transparent"
-                        Foreground="{StaticResource TextBrush}"
+                        Foreground="#D4D4D4"
                         Padding="8"/>
                 </Grid>
             </Border>
@@ -250,7 +250,7 @@
                         
                         <!-- Empty State -->
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <StackPanel.Style>  <!-- ✅ CORRECCIÓN -->
+                            <StackPanel.Style>
                                 <Style TargetType="StackPanel">
                                     <Setter Property="Visibility" Value="Collapsed"/>
                                     <Style.Triggers>

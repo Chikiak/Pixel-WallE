@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<SyntaxDefinition name="PixelWallE" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+
+    <!-- Definición de Colores (Tema Oscuro tipo VSCode) -->
+    <Color name="Comment" foreground="#6A9955" fontStyle="italic"/>
+    <Color name="String" foreground="#CE9178"/>
+    <Color name="Number" foreground="#B5CEA8"/>
+    <Color name="Boolean" foreground="#569CD6" fontWeight="bold"/>
+    <Color name="Commands" foreground="#C586C0" fontWeight="bold"/>
+    <Color name="Functions" foreground="#DCDCAA"/>
+    <Color name="Variables" foreground="#9CDCFE"/>
+    <Color name="Operators" foreground="#D4D4D4"/>
+    <Color name="Keywords" foreground="#569CD6" fontWeight="bold"/>
+    <Color name="Labels" foreground="#4EC9B0" fontStyle="italic"/>
+
+    <!-- Reglas Principales -->
+    <RuleSet>
+        <!-- Comentarios: Inician con # y van hasta el final de la línea -->
+        <Span color="Comment" begin="#" />
+
+        <!-- Strings: Delimitados por comillas dobles -->
+        <Span color="String">
+            <Begin>"</Begin>
+            <End>"</End>
+        </Span>
+
+        <!-- Números: Literales enteros -->
+        <Rule color="Number">
+            \b\d+\b
+        </Rule>
+
+        <!-- Booleanos -->
+        <Keywords color="Boolean">
+            <Word>true</Word>
+            <Word>false</Word>
+        </Keywords>
+
+        <!-- Comandos Principales -->
+        <Keywords color="Commands">
+            <Word>Spawn</Word>
+            <Word>Color</Word>
+            <Word>Size</Word>
+            <Word>DrawLine</Word>
+            <Word>DrawCircle</Word>
+            <Word>DrawRectangle</Word>
+            <Word>Fill</Word>
+            <Word>GoTo</Word>
+        </Keywords>
+        
+        <!-- Funciones Nativas -->
+        <Keywords color="Functions">
+            <Word>GetActualX</Word>
+            <Word>GetActualY</Word>
+            <Word>GetCanvasSize</Word>
+            <Word>GetColorCount</Word>
+            <Word>IsBrushColor</Word>
+            <Word>IsBrushSize</Word>
+            <Word>IsCanvasColor</Word>
+        </Keywords>
+
+        <!-- Palabras clave lógicas -->
+        <Keywords color="Keywords">
+            <Word>and</Word>
+            <Word>or</Word>
+        </Keywords>
+
+        <!-- Operador de asignación y otros (CORREGIDO) -->
+        <Rule color="Operators">
+            &lt;-|==|!=|&gt;=|&lt;=|[+\-*/%&gt;&lt;]|\*\*
+        </Rule>
+        
+        <!-- Variables -->
+        <Rule color="Variables">
+            \b[a-zA-Z_][a-zA-Z0-9_\-]*\b
+        </Rule>
+    </RuleSet>
+</SyntaxDefinition>
