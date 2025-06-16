@@ -1,187 +1,25 @@
 ﻿<Application x:Class="PixelWallE.WPF.App"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:converters="clr-namespace:PixelWallE.WPF.Converters"
-    StartupUri="/Views/MainWindow.xaml">
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:PixelWallE.WPF.Converters"
+             StartupUri="/Views/MainWindow.xaml">
     <Application.Resources>
-        <!-- Global Converters -->
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisConverter"/>
-        <converters:StringContainsConverter x:Key="StringContainsConverter"/>
-        
-        <!-- Color Palette -->
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#2563EB"/>
-        <SolidColorBrush x:Key="SuccessBrush" Color="#10B981"/>
-        <SolidColorBrush x:Key="DangerBrush" Color="#EF4444"/>
-        <SolidColorBrush x:Key="WarningBrush" Color="#F59E0B"/>
-        <SolidColorBrush x:Key="InfoBrush" Color="#06B6D4"/>
-        <SolidColorBrush x:Key="SecondaryBrush" Color="#6B7280"/>
-        <SolidColorBrush x:Key="LightBrush" Color="#F9FAFB"/>
-        <SolidColorBrush x:Key="BorderBrush" Color="#E5E7EB"/>
-        <SolidColorBrush x:Key="TextBrush" Color="#1F2937"/>
-        <SolidColorBrush x:Key="MutedBrush" Color="#6B7280"/>
-        
-        <!-- Modern Button Style -->
-        <Style x:Key="ModernButton" TargetType="Button">
-            <Setter Property="Padding" Value="16,8"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" 
-                                CornerRadius="6" 
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Opacity" Value="0.9"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        
-        <!-- Primary Button -->
-        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
-            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-        
-        <!-- Success Button -->
-        <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
-            <Setter Property="Background" Value="{StaticResource SuccessBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-        
-        <!-- Danger Button -->
-        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
-            <Setter Property="Background" Value="{StaticResource DangerBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-        
-        <!-- Secondary Button -->
-        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
-            <Setter Property="Background" Value="{StaticResource SecondaryBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-        
-        <!-- Modern TextBox Style -->
-        <Style x:Key="ModernTextBox" TargetType="TextBox">
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
-                                CornerRadius="4">
-                            <ScrollViewer x:Name="PART_ContentHost" 
-                                          Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        
-        <!-- Modern ComboBox Style -->
-        <Style x:Key="ModernComboBox" TargetType="ComboBox">
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Border Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
-                                CornerRadius="4">
-                            <Grid>
-                                <ToggleButton x:Name="ToggleButton" 
-                                              Background="Transparent" 
-                                              BorderThickness="0"
-                                              IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}"
-                                              ClickMode="Press"/>
-                                <ContentPresenter x:Name="ContentSite" 
-                                                  Margin="{TemplateBinding Padding}"
-                                                  VerticalAlignment="Center"
-                                                  Content="{TemplateBinding SelectionBoxItem}"/>
-                                <Popup x:Name="Popup" 
-                                       IsOpen="{TemplateBinding IsDropDownOpen}"
-                                       Placement="Bottom">
-                                    <Border Background="White" 
-                                            BorderBrush="{StaticResource BorderBrush}" 
-                                            BorderThickness="1"
-                                            CornerRadius="4">
-                                        <ScrollViewer>
-                                            <ItemsPresenter/>
-                                        </ScrollViewer>
-                                    </Border>
-                                </Popup>
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        
-        <!-- Global Styles -->
-        <Style TargetType="GroupBox">
-            <Setter Property="Padding" Value="12"/>
-            <Setter Property="Margin" Value="0"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="GroupBox">
-                        <Border Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
-                                CornerRadius="6">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-                                <Border Grid.Row="0" 
-                                        Background="{StaticResource LightBrush}" 
-                                        Padding="12,8"
-                                        CornerRadius="6,6,0,0">
-                                    <ContentPresenter ContentSource="Header" 
-                                                      TextElement.FontWeight="SemiBold"
-                                                      TextElement.Foreground="{StaticResource TextBrush}"/>
-                                </Border>
-                                <ContentPresenter Grid.Row="1" 
-                                                  Margin="{TemplateBinding Padding}"/>
-                            </Grid>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- 1. Cargar el tema por defecto (colores) -->
+                <ResourceDictionary Source="/Themes/Theme.Light.xaml"/>
+
+                <!-- 2. Cargar los estilos que usan los colores del tema -->
+                <ResourceDictionary Source="/Styles/Buttons.xaml"/>
+                <ResourceDictionary Source="/Styles/Controls.xaml"/>
+                
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Global Converters -->
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisConverter"/>
+            <converters:StringContainsConverter x:Key="StringContainsConverter"/>
+
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

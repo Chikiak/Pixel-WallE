@@ -8,12 +8,13 @@
     xmlns:behaviors="clr-namespace:PixelWallE.WPF.Behaviors"
     xmlns:converters="clr-namespace:PixelWallE.WPF.Converters"
     xmlns:coreCommon="clr-namespace:PixelWallE.Core.Common;assembly=PixelWallE.Core"
+    xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
     mc:Ignorable="d"
     Title="{Binding WindowTitle}" 
     Height="850" Width="1500"
     MinHeight="650" MinWidth="1100"
     WindowStartupLocation="CenterScreen"
-    Background="{StaticResource LightBrush}">
+    Background="{DynamicResource ApplicationBackgroundBrush}">
     
     <Window.DataContext>
         <viewModels:MainViewModel/>
@@ -37,8 +38,10 @@
         </Grid.RowDefinitions>
 
         <!-- Menu Bar -->
-        <Menu Grid.Row="0" Margin="0,0,0,8" Background="White" 
-              BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+        <Menu Grid.Row="0" Margin="0,0,0,8" 
+              Background="{DynamicResource ControlBackgroundBrush}" 
+              Foreground="{DynamicResource TextBrush}"
+              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
             <MenuItem Header="_File">
                 <MenuItem Header="_New" Command="{Binding NewFileCommand}"/>
                 <MenuItem Header="_Open..." Command="{Binding OpenFileCommand}"/>
@@ -48,102 +51,125 @@
                 <Separator/>
                 <MenuItem Header="E_xit" Click="Exit_Click"/>
             </MenuItem>
-            <MenuItem Header="_Image">
-                <MenuItem Header="Save Image _As..." Command="{Binding SaveImageCommand}"/>
-                <MenuItem Header="Load _Background..." Command="{Binding LoadBackgroundImageCommand}"/>
-                <MenuItem Header="Clear Background" Command="{Binding ClearBackgroundImageCommand}"/>
-            </MenuItem>
             <MenuItem Header="_Edit">
                 <MenuItem Header="Clear _Output" Command="{Binding ClearOutputCommand}"/>
                 <MenuItem Header="Reset _Code" Command="{Binding ResetCodeCommand}"/>
                 <MenuItem Header="Reset _Canvas" Command="{Binding ResetCanvasCommand}"/>
             </MenuItem>
+            <MenuItem Header="_Image">
+                <MenuItem Header="Save Image _As..." Command="{Binding SaveImageCommand}"/>
+                <MenuItem Header="Load _Background..." Command="{Binding LoadBackgroundImageCommand}"/>
+                <MenuItem Header="Clear Background" Command="{Binding ClearBackgroundImageCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                 <MenuItem Header="Theme">
+                    <MenuItem Header="Light Mode" Click="SwitchToLight_Click"/>
+                    <MenuItem Header="Dark Mode" Click="SwitchToDark_Click"/>
+                 </MenuItem>
+            </MenuItem>
         </Menu>
 
-        <!-- Modern Toolbar -->
-        <Border Grid.Row="1" Background="White" BorderBrush="{StaticResource BorderBrush}" 
-                BorderThickness="1" Padding="16,12" Margin="0,0,0,12" CornerRadius="8">
+        <!-- Professional Toolbar -->
+        <Border Grid.Row="1" Background="{DynamicResource ControlBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" 
+                BorderThickness="1" Padding="12,10" Margin="0,0,0,12" CornerRadius="8">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Left Controls -->
+                <!-- Left Controls: Execution -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <!-- Run/Stop Button -->
-                    <Button Content="▶ Run" Style="{StaticResource SuccessButton}" Command="{Binding RunCommand}" 
-                            Visibility="{Binding IsExecuting, Converter={StaticResource InverseBoolToVisConverter}}"/>
-                    <Button Content="⏹ Stop" Style="{StaticResource DangerButton}" Command="{Binding StopExecutionCommand}" 
-                            Visibility="{Binding IsExecuting, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                    
-                    <!-- Reset Canvas Button -->
-                    <Button Content="🎨 Reset Canvas" Style="{StaticResource SecondaryButton}" 
-                            Command="{Binding ResetCanvasCommand}" Margin="12,0,0,0"
-                            ToolTip="Clear the canvas and start fresh"/>
-
-                    <!-- Execution Mode -->
-                    <Border Background="{StaticResource LightBrush}" CornerRadius="6" Padding="12,8" Margin="16,0,0,0">
+                    <Button Style="{StaticResource SuccessButton}" Command="{Binding RunCommand}" 
+                            Visibility="{Binding IsExecuting, Converter={StaticResource InverseBoolToVisConverter}}">
                         <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Play" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Run"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource DangerButton}" Command="{Binding StopExecutionCommand}" 
+                            Visibility="{Binding IsExecuting, Converter={StaticResource BooleanToVisibilityConverter}}">
+                         <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Stop" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Stop"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource SecondaryButton}" 
+                            Command="{Binding ResetCanvasCommand}" Margin="12,0,0,0"
+                            ToolTip="Clear the canvas and start fresh">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Reset Canvas"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Center Controls: Execution Config & Status -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Border Background="{DynamicResource LightBrush}" CornerRadius="6" Padding="12,8">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Tune" VerticalAlignment="Center" 
+                                                        Foreground="{DynamicResource MutedBrush}" Margin="0,0,8,0"/>
                             <TextBlock Text="Mode:" VerticalAlignment="Center" 
-                                       Foreground="{StaticResource MutedBrush}" FontWeight="Medium" Margin="0,0,8,0"/>
+                                       Foreground="{DynamicResource MutedBrush}" FontWeight="Medium" Margin="0,0,8,0"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" Width="130" VerticalAlignment="Center"
                                       ItemsSource="{Binding Source={StaticResource ExecutionModes}}"
                                       SelectedItem="{Binding SelectedExecutionMode}"/>
                         </StackPanel>
                     </Border>
-                    
-                    <!-- Speed Control -->
-                    <Border Background="{StaticResource LightBrush}" CornerRadius="6" Padding="12,8" Margin="12,0,0,0">
+                    <Border Background="{DynamicResource LightBrush}" CornerRadius="6" Padding="12,8" Margin="12,0,0,0">
                         <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Speedometer" VerticalAlignment="Center" 
+                                                        Foreground="{DynamicResource MutedBrush}" Margin="0,0,8,0"/>
                             <TextBlock Text="Speed:" VerticalAlignment="Center" 
-                                       Foreground="{StaticResource MutedBrush}" FontWeight="Medium" Margin="0,0,8,0"/>
-                            <Slider Minimum="0" Maximum="500" Width="120" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource MutedBrush}" FontWeight="Medium" Margin="0,0,8,0"/>
+                            <Slider Minimum="0" Maximum="500" Width="100" VerticalAlignment="Center"
                                     Value="{Binding ExecutionDelay, Delay=100}" 
                                     TickFrequency="50" IsSnapToTickEnabled="True"/>
                             <TextBlock Text="{Binding ExecutionSpeedText}" VerticalAlignment="Center" 
-                                       Margin="8,0,0,0" FontStyle="Italic" Foreground="{StaticResource MutedBrush}" 
-                                       MinWidth="60"/>
+                                       Margin="8,0,0,0" FontStyle="Italic" Foreground="{DynamicResource MutedBrush}" MinWidth="60"/>
+                        </StackPanel>
+                    </Border>
+                     <Border Background="{DynamicResource LightBrush}" CornerRadius="6" Padding="12,8" Margin="12,0,0,0">
+                         <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="InformationOutline" VerticalAlignment="Center" 
+                                                        Foreground="{DynamicResource MutedBrush}" Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" 
+                                       FontWeight="Medium" Foreground="{DynamicResource TextBrush}"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
                 
-                <!-- Center Status -->
-                <Border Grid.Column="1" Background="{StaticResource LightBrush}" CornerRadius="6" 
-                        Padding="16,8" Margin="16,0" HorizontalAlignment="Center">
-                    <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" 
-                               HorizontalAlignment="Center" FontWeight="Medium" 
-                               Foreground="{StaticResource TextBrush}"/>
-                </Border>
-                
-                <!-- Right Controls -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- Background Preview -->
-                    <Border Background="{StaticResource LightBrush}" CornerRadius="6" Padding="12,8" Margin="0,0,12,0">
+                <!-- Right Controls: Canvas Settings -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="{DynamicResource LightBrush}" CornerRadius="6" Padding="12,8" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
+                             <iconPacks:PackIconMaterial Kind="ImageOutline" VerticalAlignment="Center" 
+                                                        Foreground="{DynamicResource MutedBrush}" Margin="0,0,8,0"/>
                             <TextBlock Text="BG:" ToolTip="{Binding BackgroundImagePath}" VerticalAlignment="Center" 
-                                       Foreground="{StaticResource MutedBrush}" FontWeight="Medium" Margin="0,0,8,0"/>
-                            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="3">
+                                       Foreground="{DynamicResource MutedBrush}" FontWeight="Medium" Margin="0,0,8,0"/>
+                            <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="3">
                                 <Image Source="{Binding BackgroundPreview}" Width="24" Height="24" 
                                        RenderOptions.BitmapScalingMode="HighQuality"/>
                             </Border>
                         </StackPanel>
                     </Border>
                     
-                    <!-- Canvas Size -->
-                    <Border Background="{StaticResource LightBrush}" CornerRadius="6" Padding="12,8">
+                    <Border Background="{DynamicResource LightBrush}" CornerRadius="6" Padding="12,8">
                         <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="AspectRatio" VerticalAlignment="Center" 
+                                                        Foreground="{DynamicResource MutedBrush}" Margin="0,0,8,0"/>
                             <TextBlock Text="Canvas:" VerticalAlignment="Center" 
-                                       Foreground="{StaticResource MutedBrush}" FontWeight="Medium" Margin="0,0,8,0"/>
+                                       Foreground="{DynamicResource MutedBrush}" FontWeight="Medium" Margin="0,0,8,0"/>
                             <TextBox Style="{StaticResource ModernTextBox}" 
                                      Text="{Binding CanvasWidth, UpdateSourceTrigger=PropertyChanged, Delay=200}" 
-                                     Width="70" VerticalContentAlignment="Center"/>
-                            <TextBlock Text="×" VerticalAlignment="Center" Margin="8,0" 
-                                       Foreground="{StaticResource MutedBrush}"/>
+                                     Width="50" VerticalContentAlignment="Center" TextAlignment="Center"/>
+                            <TextBlock Text="×" VerticalAlignment="Center" Margin="6,0" Foreground="{DynamicResource MutedBrush}"/>
                             <TextBox Style="{StaticResource ModernTextBox}" 
                                      Text="{Binding CanvasHeight, UpdateSourceTrigger=PropertyChanged, Delay=200}" 
-                                     Width="70" VerticalContentAlignment="Center"/>
+                                     Width="50" VerticalContentAlignment="Center" TextAlignment="Center"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -159,158 +185,140 @@
             </Grid.ColumnDefinitions>
 
             <!-- Code Editor -->
-            <Border Grid.Column="0" Margin="0,0,6,0" Background="#1E1E1E" 
-                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    
-                    <!-- Editor Header -->
-                    <Border Grid.Row="0" Background="#2D2D30" 
-                            Padding="16,10" CornerRadius="8,8,0,0">
-                        <TextBlock Text="📝 Code Editor" FontWeight="SemiBold" 
-                                   Foreground="#CCCCCC"/>
-                    </Border>
-                    
-                    <!-- Editor -->
-                    <avalonedit:TextEditor x:Name="CodeEditor" Grid.Row="1"
-                        FontFamily="Cascadia Code, Consolas, 'Courier New', monospace"
-                        FontSize="14"
-                        behaviors:TextEditorBehavior.BoundText="{Binding SourceCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        ShowLineNumbers="True"
-                        LineNumbersForeground="#6E7681"
-                        Background="Transparent"
-                        Foreground="#D4D4D4"
-                        Padding="8"/>
-                </Grid>
-            </Border>
+            <GroupBox Grid.Column="0" Margin="0,0,6,0">
+                <GroupBox.Header>
+                     <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconMaterial Kind="Xml" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Code Editor"/>
+                    </StackPanel>
+                </GroupBox.Header>
+                <avalonedit:TextEditor x:Name="CodeEditor"
+                    FontFamily="Cascadia Code, Consolas, 'Courier New', monospace"
+                    FontSize="14"
+                    behaviors:TextEditorBehavior.BoundText="{Binding SourceCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    ShowLineNumbers="True"
+                    LineNumbersForeground="#6E7681"
+                    Background="#1E1E1E"
+                    Foreground="#D4D4D4"
+                    Padding="8"/>
+            </GroupBox>
             
             <GridSplitter Grid.Column="1" Width="12" HorizontalAlignment="Center" 
                           VerticalAlignment="Stretch" Background="Transparent"/>
 
             <!-- Image Viewer -->
-            <Border Grid.Column="2" Margin="6,0,0,0" Background="White" 
-                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8">
+            <GroupBox Grid.Column="2" Margin="6,0,0,0">
+                <GroupBox.Header>
+                     <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconMaterial Kind="Image" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Canvas Preview"/>
+                    </StackPanel>
+                </GroupBox.Header>
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    
-                    <!-- Viewer Header -->
-                    <Border Grid.Row="0" Background="{StaticResource LightBrush}" 
-                            Padding="16,10" CornerRadius="8,8,0,0">
-                        <TextBlock Text="🖼️ Canvas Preview" FontWeight="SemiBold" 
-                                   Foreground="{StaticResource TextBrush}"/>
-                    </Border>
-                    
-                    <!-- Viewer Content -->
-                    <Grid Grid.Row="1">
-                        <!-- Checkerboard Background -->
-                        <Grid.Background>
-                            <DrawingBrush Viewport="0,0,20,20" ViewportUnits="Absolute" TileMode="Tile">
-                                <DrawingBrush.Drawing>
-                                    <DrawingGroup>
-                                        <GeometryDrawing Brush="White">
-                                            <GeometryDrawing.Geometry>
-                                                <RectangleGeometry Rect="0,0,20,20" />
-                                            </GeometryDrawing.Geometry>
-                                        </GeometryDrawing>
-                                        <GeometryDrawing Brush="#F3F4F6">
-                                            <GeometryDrawing.Geometry>
-                                                <GeometryGroup>
-                                                    <RectangleGeometry Rect="0,0,10,10" />
-                                                    <RectangleGeometry Rect="10,10,10,10" />
-                                                </GeometryGroup>
-                                            </GeometryDrawing.Geometry>
-                                        </GeometryDrawing>
-                                    </DrawingGroup>
-                                </DrawingBrush.Drawing>
-                            </DrawingBrush>
-                        </Grid.Background>
-                        
-                        <Image Source="{Binding RenderedImage}" Stretch="Uniform" 
-                               RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="8"/>
-                        
-                        <!-- Execution Overlay -->
-                        <Border Background="#CC000000" CornerRadius="0,0,8,8"
-                                Visibility="{Binding IsExecuting, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock Text="⚙️ Executing..." Foreground="White" FontSize="18" 
-                                           HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                <TextBlock Text="Press Stop to cancel" Foreground="#D1D5DB" FontSize="14" 
-                                           HorizontalAlignment="Center" Margin="0,8,0,0"/>
-                                <ProgressBar IsIndeterminate="True" Width="240" Height="6" 
-                                             Margin="0,16,0,0" BorderThickness="0" 
-                                             Background="#374151" Foreground="{StaticResource PrimaryBrush}"/>
-                            </StackPanel>
-                        </Border>
-                        
-                        <!-- Empty State -->
+                    <Grid.Background>
+                        <DrawingBrush Viewport="0,0,20,20" ViewportUnits="Absolute" TileMode="Tile">
+                            <DrawingBrush.Drawing>
+                                <DrawingGroup>
+                                    <GeometryDrawing Brush="{DynamicResource ControlBackgroundBrush}">
+                                        <GeometryDrawing.Geometry><RectangleGeometry Rect="0,0,20,20" /></GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                    <GeometryDrawing Brush="{DynamicResource ApplicationBackgroundBrush}">
+                                        <GeometryDrawing.Geometry>
+                                            <GeometryGroup>
+                                                <RectangleGeometry Rect="0,0,10,10" /><RectangleGeometry Rect="10,10,10,10" />
+                                            </GeometryGroup>
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                </DrawingGroup>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </Grid.Background>
+                    <Image Source="{Binding RenderedImage}" Stretch="Uniform" 
+                           RenderOptions.BitmapScalingMode="NearestNeighbor" Margin="8"/>
+                    <Border Background="#BF000000" CornerRadius="6"
+                            Visibility="{Binding IsExecuting, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <StackPanel.Style>
-                                <Style TargetType="StackPanel">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                    <Style.Triggers>
-                                        <MultiDataTrigger>
-                                            <MultiDataTrigger.Conditions>
-                                                <Condition Binding="{Binding IsExecuting}" Value="False"/>
-                                                <Condition Binding="{Binding RenderedImage}" Value="{x:Null}"/>
-                                            </MultiDataTrigger.Conditions>
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                        </MultiDataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </StackPanel.Style>
-    
-                            <TextBlock Text="🎨" FontSize="48" HorizontalAlignment="Center" 
-                                       Foreground="{StaticResource MutedBrush}" Margin="0,0,0,16"/>
-                            <TextBlock Text="No image generated yet" FontSize="16" FontWeight="SemiBold"
-                                       HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}"/>
-                            <TextBlock Text="Click 'Run' to execute your code" FontSize="14"
-                                       HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" 
-                                       Margin="0,4,0,0"/>
+                            <iconPacks:PackIconMaterial Kind="Sync" Width="32" Height="32" Foreground="White" HorizontalAlignment="Center">
+                                <iconPacks:PackIconMaterial.RenderTransform>
+                                    <RotateTransform Angle="0" CenterX="16" CenterY="16"/>
+                                </iconPacks:PackIconMaterial.RenderTransform>
+                                <iconPacks:PackIconMaterial.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                 From="0" To="360" Duration="0:0:1.5" RepeatBehavior="Forever"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </iconPacks:PackIconMaterial.Triggers>
+                            </iconPacks:PackIconMaterial>
+                            <TextBlock Text="Executing..." Foreground="White" FontSize="18" 
+                                       HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,12,0,0"/>
+                            <TextBlock Text="Press Stop to cancel" Foreground="#D1D5DB" FontSize="14" 
+                                       HorizontalAlignment="Center" Margin="0,8,0,0"/>
                         </StackPanel>
-                    </Grid>
+                    </Border>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsExecuting}" Value="False"/>
+                                            <Condition Binding="{Binding RenderedImage}" Value="{x:Null}"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <TextBlock Text="🎨" FontSize="48" HorizontalAlignment="Center" 
+                                   Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,16"/>
+                        <TextBlock Text="No image generated yet" FontSize="16" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
+                        <TextBlock Text="Click 'Run' to execute your code" FontSize="14"
+                                   HorizontalAlignment="Center" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0"/>
+                    </StackPanel>
                 </Grid>
-            </Border>
+            </GroupBox>
         </Grid>
         
         <GridSplitter Grid.Row="3" Height="12" HorizontalAlignment="Stretch" 
                       VerticalAlignment="Center" Background="Transparent"/>
 
         <!-- Output Console -->
-        <GroupBox Grid.Row="4" Header="📋 Output Console" Margin="0,6,0,0">
+        <GroupBox Grid.Row="4" Margin="0,6,0,0">
+             <GroupBox.Header>
+                 <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial Kind="Console" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="Output Console"/>
+                </StackPanel>
+            </GroupBox.Header>
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <ListBox ItemsSource="{Binding Messages}" 
                          FontFamily="Cascadia Code, Consolas, 'Courier New', monospace"
-                         FontSize="13"
-                         Background="Transparent"
-                         BorderThickness="0"
+                         FontSize="13" Background="Transparent" BorderThickness="0"
                          SelectionMode="Extended">
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
                             <Setter Property="Padding" Value="8,4"/>
                             <Setter Property="BorderThickness" Value="0"/>
                             <Setter Property="Margin" Value="0,1"/>
+                            <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Path=., Converter={StaticResource StringContainsConverter}, ConverterParameter='✗'}" Value="True">
-                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
-                                    <Setter Property="Background" Value="#FEF2F2"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Path=., Converter={StaticResource StringContainsConverter}, ConverterParameter='✓'}" Value="True">
-                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
-                                    <Setter Property="Background" Value="#F0FDF4"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Path=., Converter={StaticResource StringContainsConverter}, ConverterParameter='🖼️'}" Value="True">
-                                    <Setter Property="Foreground" Value="{StaticResource InfoBrush}"/>
-                                    <Setter Property="Background" Value="#F0F9FF"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource InfoBrush}"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Path=., Converter={StaticResource StringContainsConverter}, ConverterParameter='🎨'}" Value="True">
-                                    <Setter Property="Foreground" Value="#8B5CF6"/>
-                                    <Setter Property="Background" Value="#FAF5FF"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>

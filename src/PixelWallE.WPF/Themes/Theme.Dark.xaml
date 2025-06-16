@@ -1,0 +1,37 @@
+<!-- File: Themes/Theme.Dark.xaml -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Color Palette -->
+    <Color x:Key="PrimaryColor">#3B82F6</Color>
+    <Color x:Key="SuccessColor">#10B981</Color>
+    <Color x:Key="DangerColor">#F87171</Color>
+    <Color x:Key="WarningColor">#FBBF24</Color>
+    <Color x:Key="InfoColor">#22D3EE</Color>
+    <Color x:Key="SecondaryColor">#9CA3AF</Color>
+
+    <!-- UI Colors -->
+    <Color x:Key="ApplicationBackgroundColor">#111827</Color>
+    <Color x:Key="ControlBackgroundColor">#1F2937</Color>
+    <Color x:Key="LightBackgroundColor">#374151</Color>
+    <Color x:Key="BorderColor">#4B5563</Color>
+    <Color x:Key="TextColor">#F9FAFB</Color>
+    <Color x:Key="MutedTextColor">#9CA3AF</Color>
+    <Color x:Key="SeparatorColor">#374151</Color>
+
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+    <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource InfoColor}"/>
+    <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource SecondaryColor}"/>
+    
+    <SolidColorBrush x:Key="ApplicationBackgroundBrush" Color="{StaticResource ApplicationBackgroundColor}"/>
+    <SolidColorBrush x:Key="ControlBackgroundBrush" Color="{StaticResource ControlBackgroundColor}"/>
+    <SolidColorBrush x:Key="LightBrush" Color="{StaticResource LightBackgroundColor}"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+    <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+    <SolidColorBrush x:Key="MutedBrush" Color="{StaticResource MutedTextColor}"/>
+    <SolidColorBrush x:Key="SeparatorBrush" Color="{StaticResource SeparatorColor}"/>
+</ResourceDictionary>

@@ -6,73 +6,82 @@ using System.Linq; // <-- AÑADIR ESTE USING
 using System.Reflection;
 using System.Windows;
 using System.Xml;
+using PixelWallE.WPF.Services;
 
-namespace PixelWallE.WPF.Views
+namespace PixelWallE.WPF.Views;
+
+public partial class MainWindow : Window
 {
-    public partial class MainWindow : Window
+    public MainWindow()
     {
-        public MainWindow()
-        {
-            InitializeComponent();
-            LoadSyntaxHighlighting();
-        }
+        InitializeComponent();
+        LoadSyntaxHighlighting();
+    }
 
-        private void LoadSyntaxHighlighting()
+    private void LoadSyntaxHighlighting()
+    {
+        try
         {
-            try
+            var assembly = Assembly.GetExecutingAssembly();
+
+            // --- INICIO DEL CÓDIGO DE DEPURACIÓN ---
+            // Imprime todos los recursos incrustados para encontrar el nombre correcto.
+            string[] resourceNames = assembly.GetManifestResourceNames();
+            System.Diagnostics.Debug.WriteLine("--- Embedded Resources Found ---");
+            foreach (string name in resourceNames)
             {
-                var assembly = Assembly.GetExecutingAssembly();
+                System.Diagnostics.Debug.WriteLine(name);
+            }
+            System.Diagnostics.Debug.WriteLine("--------------------------------");
+            // --- FIN DEL CÓDIGO DE DEPURACIÓN ---
 
-                // --- INICIO DEL CÓDIGO DE DEPURACIÓN ---
-                // Imprime todos los recursos incrustados para encontrar el nombre correcto.
-                string[] resourceNames = assembly.GetManifestResourceNames();
-                System.Diagnostics.Debug.WriteLine("--- Embedded Resources Found ---");
-                foreach (string name in resourceNames)
+            // Busca el nombre del recurso que termina con .xshd
+            string? resourceName = resourceNames.FirstOrDefault(s => s.EndsWith("PixelWallE.xshd"));
+            if (resourceName == null)
+            {
+                throw new InvalidOperationException("Could not find the PixelWallE.xshd embedded resource.");
+            }
+
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream == null)
                 {
-                    System.Diagnostics.Debug.WriteLine(name);
+                    // Esto no debería pasar si resourceName no es null, pero es una buena práctica verificarlo.
+                    throw new InvalidOperationException($"Could not load embedded resource stream for '{resourceName}'.");
                 }
-                System.Diagnostics.Debug.WriteLine("--------------------------------");
-                // --- FIN DEL CÓDIGO DE DEPURACIÓN ---
-
-                // Busca el nombre del recurso que termina con .xshd
-                string? resourceName = resourceNames.FirstOrDefault(s => s.EndsWith("PixelWallE.xshd"));
-                if (resourceName == null)
-                {
-                    throw new InvalidOperationException("Could not find the PixelWallE.xshd embedded resource.");
-                }
-
-                using (var stream = assembly.GetManifestResourceStream(resourceName))
-                {
-                    if (stream == null)
-                    {
-                        // Esto no debería pasar si resourceName no es null, pero es una buena práctica verificarlo.
-                        throw new InvalidOperationException($"Could not load embedded resource stream for '{resourceName}'.");
-                    }
                     
-                    using (var reader = new XmlTextReader(stream))
-                    {
-                        CodeEditor.SyntaxHighlighting = HighlightingLoader.Load(reader, HighlightingManager.Instance);
-                    }
+                using (var reader = new XmlTextReader(stream))
+                {
+                    CodeEditor.SyntaxHighlighting = HighlightingLoader.Load(reader, HighlightingManager.Instance);
                 }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading syntax highlighting: {ex.Message}");
-            }
         }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading syntax highlighting: {ex.Message}");
+        }
+    }
 
-        protected override void OnClosed(System.EventArgs e)
+    protected override void OnClosed(System.EventArgs e)
+    {
+        if (DataContext is System.IDisposable disposable)
         {
-            if (DataContext is System.IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
-            base.OnClosed(e);
+            disposable.Dispose();
         }
+        base.OnClosed(e);
+    }
         
-        private void Exit_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
-        }
+    private void Exit_Click(object sender, RoutedEventArgs e)
+    {
+        Application.Current.Shutdown();
+    }
+    private void SwitchToDark_Click(object sender, RoutedEventArgs e)
+    {
+        ThemeService.ApplyTheme(Theme.Dark);
+    }
+
+    private void SwitchToLight_Click(object sender, RoutedEventArgs e)
+    {
+        ThemeService.ApplyTheme(Theme.Light);
     }
 }
