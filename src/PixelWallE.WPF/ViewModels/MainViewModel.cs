@@ -3,6 +3,7 @@
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PixelWallE.Core.Common; // Using para ExecutionMode
 using PixelWallE.Core.Drawing;
 using PixelWallE.Core.Errors;
 using PixelWallE.Core.Services;
@@ -19,9 +20,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
-namespace PixelWallE.WPF.ViewModels{
-
-public enum ExecutionMode { Instant, StepByStep, PixelByPixel }
+namespace PixelWallE.WPF.ViewModels;
+// La enumeración ExecutionMode se ha movido a PixelWallE.Core.Common.ExecutionMode
 
 public partial class MainViewModel : ObservableObject, IDisposable
 {
@@ -64,7 +64,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RunCommand))]
     private int _canvasHeight = 500;
-    
+
     [ObservableProperty]
     private string _currentFilePath = string.Empty;
 
@@ -73,7 +73,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string _windowTitle = "PixelWallE Studio - Untitled*";
-    
+
     public ObservableCollection<string> Messages { get; } = new();
 
     public bool IsDirty => _sourceCode != _savedSourceCode;
@@ -105,16 +105,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
     #endregion
 
     #region Commands
-    
+
     [RelayCommand(CanExecute = nameof(CanRun))]
     private async Task RunAsync()
     {
         IsExecuting = true;
         StatusMessage = "Compiling...";
         Messages.Clear();
-    
+
         _cancellationTokenSource = new CancellationTokenSource();
-    
+
         try
         {
             var compileResult = _compilerService.Compile(SourceCode);
@@ -125,33 +125,33 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 IsExecuting = false;
                 return;
             }
-    
+
             StatusMessage = "Executing...";
             InitializeBitmapForRun();
-    
+
             var progress = new Progress<DrawingUpdate>(update =>
             {
-                // Este código se ejecuta en el hilo de UI
                 HandleDrawingUpdate(update);
             });
-    
-            // Ejecutar en un hilo de fondo para no bloquear la UI
+
+            int delay = SelectedExecutionMode == ExecutionMode.Instant ? 0 : ExecutionDelay;
+
             await Task.Run(async () =>
             {
                 await _executionService.ExecuteAsync(
-                    compileResult.Value, 
-                    _currentBitmap, 
-                    CanvasWidth, 
+                    compileResult.Value,
+                    _currentBitmap,
+                    CanvasWidth,
                     CanvasHeight,
                     progress,
+                    delay,
+                    SelectedExecutionMode, // Se pasa el modo seleccionado
                     _cancellationTokenSource.Token);
             }, _cancellationTokenSource.Token);
         }
         catch (OperationCanceledException)
         {
-            // Este catch se activa si la cancelación ocurre antes de que la ejecución comience
-            // o si no se maneja dentro del propio servicio.
-            if (IsExecuting) // Evitar doble mensaje si ya se manejó en el progress handler
+            if (IsExecuting)
             {
                 StatusMessage = "Execution cancelled";
                 Messages.Add("✗ Execution cancelled by user");
@@ -166,38 +166,37 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         finally
         {
-            // IsExecuting será puesto a false por el handler de `DrawingUpdate.Complete` o `Error`
             _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = null;
         }
     }
-    
-    // NUEVO MÉTODO
-    private async void HandleDrawingUpdate(DrawingUpdate update)
+
+    private void HandleDrawingUpdate(DrawingUpdate update)
     {
-        // El handler se llama en el hilo UI, no se necesita Dispatcher.
         if (update.Bitmap != null)
         {
-            _currentBitmap = update.Bitmap; // Actualizar nuestra referencia
+            _currentBitmap = update.Bitmap;
             UpdateRenderedImage(update.Bitmap);
         }
-    
-        // No continuar si la ejecución ya se detuvo
+
         if (!IsExecuting && !update.IsComplete && !update.IsError) return;
 
-        bool shouldDelay = false;
         switch (update.Type)
         {
             case DrawingUpdateType.Pixel:
-                if (SelectedExecutionMode == ExecutionMode.PixelByPixel) shouldDelay = true;
-                StatusMessage = "Executing (Pixel by Pixel)...";
+                if (SelectedExecutionMode == ExecutionMode.PixelByPixel)
+                {
+                    StatusMessage = "Executing (Pixel by Pixel)...";
+                }
                 break;
-                
+
             case DrawingUpdateType.Step:
-                if (SelectedExecutionMode == ExecutionMode.StepByStep) shouldDelay = true;
-                StatusMessage = "Executing (Step by Step)...";
+                if (SelectedExecutionMode == ExecutionMode.StepByStep || SelectedExecutionMode == ExecutionMode.PixelByPixel)
+                {
+                    StatusMessage = "Executing (Step by Step)...";
+                }
                 break;
-                
+
             case DrawingUpdateType.Complete:
                 StatusMessage = update.Message ?? "Execution completed";
                 if (update.Errors != null && update.Errors.Any())
@@ -210,7 +209,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 }
                 IsExecuting = false;
                 break;
-                
+
             case DrawingUpdateType.Error:
                 StatusMessage = update.Message ?? "Error occurred";
                 if (update.Errors != null && update.Errors.Any())
@@ -220,23 +219,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 IsExecuting = false;
                 break;
         }
-
-        if (shouldDelay && ExecutionDelay > 0)
-        {
-            try
-            {
-                await Task.Delay(ExecutionDelay, _cancellationTokenSource?.Token ?? CancellationToken.None);
-            }
-            catch (OperationCanceledException) { /* Ignorar, es esperado */ }
-        }
     }
-    
+
     [RelayCommand(CanExecute = nameof(CanStop))]
     private void StopExecution()
     {
         _cancellationTokenSource?.Cancel();
     }
-    
+
     private bool CanStop() => IsExecuting;
 
     [RelayCommand]
@@ -264,7 +254,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             Messages.Clear();
             Messages.Add($"✓ Opened: {CurrentFilePath}");
         }
-        else if(result.FilePath != null)
+        else if (result.FilePath != null)
         {
             StatusMessage = "Failed to open file.";
             Messages.Add($"✗ Error opening file '{result.FilePath}': {result.Content}");
@@ -313,10 +303,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         else
         {
             StatusMessage = "Save as cancelled or failed.";
-            if(result.Content != null) Messages.Add($"✗ Save as failed: {result.Content}");
+            if (result.Content != null) Messages.Add($"✗ Save as failed: {result.Content}");
         }
     }
-    
+
     [RelayCommand]
     private async Task LoadBackgroundImageAsync()
     {
@@ -351,7 +341,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         StatusMessage = "Background image cleared.";
         Messages.Add("🖼️ Background cleared.");
     }
-    
+
     [RelayCommand]
     private void SaveImage()
     {
@@ -403,7 +393,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         SourceCode = GetDefaultCode();
         ClearOutput();
     }
-    
+
     [RelayCommand(CanExecute = nameof(CanResetCanvas))]
     private void ResetCanvas()
     {
@@ -411,25 +401,22 @@ public partial class MainViewModel : ObservableObject, IDisposable
         StatusMessage = "Canvas reset";
         Messages.Add("🎨 Canvas reset");
     }
-    
+
     private bool CanResetCanvas() => !IsExecuting;
     #endregion
 
     #region Private Methods
-    
+
     private void InitializeBitmapForRun()
     {
-        // Case 1: The canvas must be (re)created because it doesn't exist
-        // or its dimensions have changed.
-        if (_currentBitmap == null || 
-            _currentBitmap.Width != CanvasWidth || 
+        if (_currentBitmap == null ||
+            _currentBitmap.Width != CanvasWidth ||
             _currentBitmap.Height != CanvasHeight)
         {
-            ClearCurrentImage(); // Dispose of the old one if it exists.
-        
+            ClearCurrentImage();
+
             if (!string.IsNullOrEmpty(BackgroundImagePath) && File.Exists(BackgroundImagePath))
             {
-                // Decode the background image and scale it to fit the canvas.
                 using var original = SKBitmap.Decode(BackgroundImagePath);
                 var info = new SKImageInfo(CanvasWidth, CanvasHeight);
                 _currentBitmap = new SKBitmap(info);
@@ -437,7 +424,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
             }
             else
             {
-                // Otherwise, create a new blank canvas.
                 var info = new SKImageInfo(CanvasWidth, CanvasHeight);
                 _currentBitmap = new SKBitmap(info);
                 using (var canvas = new SKCanvas(_currentBitmap))
@@ -445,14 +431,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
                     canvas.Clear(SKColors.White);
                 }
             }
-            // Update the UI to show the new initial state.
             UpdateRenderedImage(_currentBitmap);
         }
-        // Case 2: The bitmap already exists and has the correct dimensions.
-        // We will reuse it, allowing drawing on top of the previous result.
-        // The user must click "Reset Canvas" to start fresh.
     }
-    
+
     private bool CanRun() => !string.IsNullOrWhiteSpace(SourceCode) && !IsExecuting &&
                              CanvasWidth > 0 && CanvasHeight > 0 &&
                              CanvasWidth <= 2048 && CanvasHeight <= 2048;
@@ -463,7 +445,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         WindowTitle = $"PixelWallE Studio - {fileName}{(IsDirty ? "*" : "")}";
         OnPropertyChanged(nameof(IsDirty));
     }
-    
+
     partial void OnSourceCodeChanged(string value) => UpdateWindowTitle();
 
     private void UpdateRenderedImage(SKBitmap bitmap)
@@ -506,7 +488,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                                               Color("invalid-color")
                                               """;
     #endregion
-    
+
     #region IDisposable
     public void Dispose()
     {
@@ -516,5 +498,4 @@ public partial class MainViewModel : ObservableObject, IDisposable
         GC.SuppressFinalize(this);
     }
     #endregion
-}
 }

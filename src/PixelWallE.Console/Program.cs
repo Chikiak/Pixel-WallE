@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using PixelWallE.Core.Common;
 
 namespace ConsoleWall_e;
 
@@ -102,30 +103,33 @@ static class Program
                 {
                     Errors.AddRange(update.Errors);
                 }
-                
+
                 // Si el update es de error y trae un mensaje, lo añadimos como error genérico.
                 // Útil para errores como el límite de ejecución.
                 if (update.Type == DrawingUpdateType.Error && !string.IsNullOrEmpty(update.Message) && (update.Errors == null || !update.Errors.Any()))
                 {
-                    Errors.Add(new RuntimeError(new PixelWallE.Core.Common.CodeLocation(0,0), update.Message));
+                    Errors.Add(new RuntimeError(new PixelWallE.Core.Common.CodeLocation(0, 0), update.Message));
                 }
 
                 tcs.TrySetResult(true);
             }
         });
-            
-        // Inicia la ejecución con la nueva firma del método, pasando el progress handler.
+
+        // Inicia la ejecución con la nueva firma del método, pasando el progress handler,
+        // el delay (0) y el modo de ejecución (Instant).
         await executionService.ExecuteAsync(
-            programAst, 
-            null,       // Sin bitmap inicial
-            64,         // Ancho por defecto
-            64,         // Alto por defecto
-            progressHandler, 
+            programAst,
+            null,                   // Sin bitmap inicial
+            64,                     // Ancho por defecto
+            64,                     // Alto por defecto
+            progressHandler,
+            0,                      // executionDelay: 0 para la consola
+            ExecutionMode.Instant,  // executionMode: Instant para la consola
             CancellationToken.None);
-            
+
         // Esperamos a que el progress handler nos avise que la ejecución ha terminado.
         await tcs.Task;
-            
+
         Console.WriteLine("Execution finished.");
 
         // El guardado de la imagen permanece igual.
@@ -137,9 +141,9 @@ static class Program
                 using var image = SKImage.FromBitmap(finalBitmap);
                 using var data = image.Encode(SKEncodedImageFormat.Png, 100);
                 using var stream = File.OpenWrite(outputPath);
-                
+
                 data.SaveTo(stream);
-                    
+
                 Console.WriteLine($"Image saved to {outputPath}");
             }
             catch (Exception ex)

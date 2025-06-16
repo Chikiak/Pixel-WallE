@@ -30,23 +30,29 @@ public class Interpreter : IInterpreter, IVisitor<object?>
     private Dictionary<string, int> _labelIndexMap = new();
     private int _statementPointer = 0;
     private IReadOnlyList<Stmt> _programStatements = new List<Stmt>().AsReadOnly();
-    
-    // AGREGAR al inicio de la clase Interpreter
+
     private int _totalStatements = 0;
-    private const int MAX_TOTAL_STATEMENTS = 50000; // Límite brutal pero efectivo
+    private const int MAX_TOTAL_STATEMENTS = 50000;
+
+    private readonly int _executionDelay;
+    private readonly ExecutionMode _executionMode; // Campo añadido
     #endregion
 
     #region Constructors
-    public Interpreter(int width, int height)
+    public Interpreter(int width, int height, int executionDelay = 0, ExecutionMode executionMode = ExecutionMode.Instant)
     {
+        _executionDelay = executionDelay;
+        _executionMode = executionMode; // Parámetro asignado
         _skBitmap = new SKBitmap(width, height);
         using (var tempCanvas = new SKCanvas(_skBitmap)) { tempCanvas.Clear(SKColors.White); }
         _skCanvas = new SKCanvas(_skBitmap);
         _skPaint = InitializePaint();
     }
 
-    public Interpreter(SKBitmap existingBitmap)
+    public Interpreter(SKBitmap existingBitmap, int executionDelay = 0, ExecutionMode executionMode = ExecutionMode.Instant)
     {
+        _executionDelay = executionDelay;
+        _executionMode = executionMode; // Parámetro asignado
         _skBitmap = existingBitmap.Copy();
         _skCanvas = new SKCanvas(_skBitmap);
         _skPaint = InitializePaint();
@@ -60,44 +66,39 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         return new SKPaint { IsAntialias = false, StrokeWidth = _currentSize, Color = ToSkiaColor(_currentColor) };
     }
     #endregion
-    
-    // REEMPLAZAR InterpretAsync completamente
+
     public async Task InterpretAsync(ProgramStmt program, IProgress<DrawingUpdate> progress, CancellationToken cancellationToken = default)
     {
         InitializeForRun(program);
-        
+
         try
         {
             _statementPointer = 0;
-            _totalStatements = 0; // NUEVO: contador global
-            
+            _totalStatements = 0;
+
             while (_statementPointer < _programStatements.Count)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                
-                // NUEVO: Límite brutal para bucles infinitos
+
                 _totalStatements++;
                 if (_totalStatements > MAX_TOTAL_STATEMENTS)
                 {
                     var error = new RuntimeError(new CodeLocation(0, 0), "Execution limit reached (possible infinite loop).");
                     progress.Report(new DrawingUpdate(
-                        _skBitmap.Copy(), 
+                        _skBitmap.Copy(),
                         DrawingUpdateType.Error,
                         error.Message, new[] { error }));
                     return;
                 }
-                
+
                 var stmt = _programStatements[_statementPointer];
                 _statementPointer++;
-                
-                // Ejecutar statement
+
                 await ExecuteStatementWithProgressAsync(stmt, progress, cancellationToken);
-                
-                // Pequeña pausa para permitir cancelación
+
                 await Task.Yield();
             }
-            
-            // Ejecución completa
+
             progress.Report(new DrawingUpdate(_skBitmap.Copy(), DrawingUpdateType.Complete, "Execution completed successfully", _errors.AsReadOnly()));
         }
         catch (RuntimeErrorException rex)
@@ -116,16 +117,8 @@ public class Interpreter : IInterpreter, IVisitor<object?>
             _errors.Add(error);
             progress.Report(new DrawingUpdate(_skBitmap.Copy(), DrawingUpdateType.Error, ex.Message, _errors.AsReadOnly()));
         }
-        finally
-        {
-            // La limpieza de los objetos de Skia se debe hacer en el consumidor (ViewModel)
-            // para que la última imagen renderizada siga siendo válida.
-            // _skCanvas?.Dispose();
-            // _skPaint?.Dispose();
-            // _skBitmap?.Dispose();
-        }
     }
-    
+
     private void InitializeForRun(ProgramStmt program)
     {
         _environment.Clear();
@@ -144,13 +137,10 @@ public class Interpreter : IInterpreter, IVisitor<object?>
 
     #region Execution and Drawing Logic
 
-    // NUEVO MÉTODO
     private async Task ExecuteStatementWithProgressAsync(Stmt stmt, IProgress<DrawingUpdate> progress, CancellationToken cancellationToken)
     {
-        // Ejecutar la lógica del statement
         stmt.Accept(this);
-        
-        // Si es un comando de dibujo, emitir progreso según el modo
+
         if (stmt is DrawLineStmt or DrawCircleStmt or DrawRectangleStmt)
         {
             await EmitDrawingProgressAsync(progress, cancellationToken);
@@ -159,44 +149,61 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         {
             await EmitFillProgressAsync(fillStmt, progress, cancellationToken);
         }
-        // Para otros statements (Spawn, Color, etc.) no hay progreso visual inmediato.
     }
-    
+
     private async Task EmitDrawingProgressAsync(IProgress<DrawingUpdate> progress, CancellationToken cancellationToken)
     {
         int pixelCount = 0;
         foreach (var pixel in _currentDraw)
         {
-            if (cancellationToken.IsCancellationRequested) return;
-            
+            cancellationToken.ThrowIfCancellationRequested();
+
             var (pos, color) = (pixel.Key, pixel.Value);
             if (IsInBounds(pos.x, pos.y))
             {
                 DrawPixel(pos.x, pos.y, color);
-                
-                // Emitir progreso por pixel cada cierto número de píxeles para no saturar
                 pixelCount++;
-                if (pixelCount % 10 == 0) // Agrupamos updates para mejor performance
+
+                // Lógica de actualización y delay por modo de ejecución
+                if (_executionMode == ExecutionMode.PixelByPixel)
                 {
                     progress.Report(new DrawingUpdate(_skBitmap.Copy(), DrawingUpdateType.Pixel));
-                    await Task.Yield();
+                    if (_executionDelay > 0)
+                    {
+                        await Task.Delay(_executionDelay, cancellationToken);
+                    }
+                }
+                else if (_executionMode == ExecutionMode.StepByStep)
+                {
+                    if (pixelCount % 10 == 0) // Actualizar visualmente cada 10 píxeles para performance
+                    {
+                        progress.Report(new DrawingUpdate(_skBitmap.Copy(), DrawingUpdateType.Pixel));
+                        await Task.Yield();
+                    }
                 }
             }
         }
-        
-        // Reporte final del paso
+
+        // Reportar que el paso (comando) se ha completado
         progress.Report(new DrawingUpdate(_skBitmap.Copy(), DrawingUpdateType.Step));
+
+        // Aplicar delay al final del paso solo en modo StepByStep
+        if (_executionMode == ExecutionMode.StepByStep && _executionDelay > 0)
+        {
+            await Task.Delay(_executionDelay, cancellationToken);
+        }
+
         _currentDraw.Clear();
     }
-    
+
     private async Task EmitFillProgressAsync(FillStmt stmt, IProgress<DrawingUpdate> progress, CancellationToken cancellationToken)
     {
         if (!IsInBounds((int)_currentWallEPosition.X, (int)_currentWallEPosition.Y)) return;
-        
+
         var targetSkColor = _skBitmap.GetPixel((int)_currentWallEPosition.X, (int)_currentWallEPosition.Y);
         var fillSkColor = BlendColors(targetSkColor, ToSkiaColor(_currentColor));
-        
-        if (targetSkColor == fillSkColor) 
+
+        if (targetSkColor == fillSkColor)
         {
             progress.Report(new DrawingUpdate(_skBitmap.Copy(), DrawingUpdateType.Step));
             return;
@@ -205,40 +212,62 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         var pixelsToProcess = new Queue<SKPoint>();
         pixelsToProcess.Enqueue(_currentWallEPosition);
         var visited = new HashSet<SKPoint>();
-        
+
         int processedCount = 0;
-        
+
         while (pixelsToProcess.Count > 0)
         {
-            if (cancellationToken.IsCancellationRequested) return;
-            
+            cancellationToken.ThrowIfCancellationRequested();
+
             var currentPixel = pixelsToProcess.Dequeue();
             if (!visited.Add(currentPixel)) continue;
-            
+
             var (x, y) = ((int)currentPixel.X, (int)currentPixel.Y);
-            
+
             if (IsInBounds(x, y) && _skBitmap.GetPixel(x, y) == targetSkColor)
             {
                 _skBitmap.SetPixel(x, y, fillSkColor);
-                
-                // Emitir progreso cada 50 pixels
+
                 processedCount++;
-                if (processedCount % 50 == 0)
+                // Lógica de actualización y delay por modo de ejecución
+                if (_executionMode == ExecutionMode.PixelByPixel)
                 {
-                    progress.Report(new DrawingUpdate(_skBitmap.Copy(), DrawingUpdateType.Pixel));
-                    await Task.Yield();
+                    if (processedCount % 5 == 0) // Optimización para no ahogar la UI
+                    {
+                        progress.Report(new DrawingUpdate(_skBitmap.Copy(), DrawingUpdateType.Pixel));
+                        if (_executionDelay > 0)
+                        {
+                            await Task.Delay(_executionDelay, cancellationToken);
+                        }
+                        else
+                        {
+                            await Task.Yield();
+                        }
+                    }
                 }
-                
-                // Agregar vecinos
+                else if (_executionMode == ExecutionMode.StepByStep)
+                {
+                    if (processedCount % 50 == 0) // Actualización menos frecuente
+                    {
+                        progress.Report(new DrawingUpdate(_skBitmap.Copy(), DrawingUpdateType.Pixel));
+                        await Task.Yield();
+                    }
+                }
+
                 pixelsToProcess.Enqueue(new SKPoint(x, y - 1));
                 pixelsToProcess.Enqueue(new SKPoint(x, y + 1));
                 pixelsToProcess.Enqueue(new SKPoint(x - 1, y));
                 pixelsToProcess.Enqueue(new SKPoint(x + 1, y));
             }
         }
-        
-        // Emitir paso completo
+
         progress.Report(new DrawingUpdate(_skBitmap.Copy(), DrawingUpdateType.Step));
+
+        // Aplicar delay al final del paso solo en modo StepByStep
+        if (_executionMode == ExecutionMode.StepByStep && _executionDelay > 0)
+        {
+            await Task.Delay(_executionDelay, cancellationToken);
+        }
     }
     #endregion
 
@@ -250,7 +279,7 @@ public class Interpreter : IInterpreter, IVisitor<object?>
     {
         var x = ConvertToInt(Evaluate(stmt.X), stmt.X.Location, nameof(stmt.X));
         var y = ConvertToInt(Evaluate(stmt.Y), stmt.Y.Location, nameof(stmt.Y));
-        if (!IsInBounds(x,y)) throw new RuntimeErrorException(new RuntimeError(stmt.Location, $"Spawn coordinates ({x},{y}) out of canvas range ({_skBitmap.Width}x{_skBitmap.Height})."));
+        if (!IsInBounds(x, y)) throw new RuntimeErrorException(new RuntimeError(stmt.Location, $"Spawn coordinates ({x},{y}) out of canvas range ({_skBitmap.Width}x{_skBitmap.Height})."));
         _currentWallEPosition = new SKPoint(x, y);
         return null;
     }
@@ -407,18 +436,18 @@ public class Interpreter : IInterpreter, IVisitor<object?>
 
     #region Drawing and Conversion Helpers
     private void DrawPixel(int x, int y, SKColor color) => _skBitmap.SetPixel(x, y, color);
-    private void DrawBrush(int cx, int cy, SKColor color) { for (int x = cx - _currentSize/2; x <= cx + _currentSize/2; x++) for (int y = cy - _currentSize/2; y <= cy + _currentSize/2; y++) if (IsInBounds(x, y)) _currentDraw.TryAdd((x, y), BlendColors(_skBitmap.GetPixel(x, y), color)); }
-    private void DrawCircle(int cX, int cY, int r) { var x=0;var y=r;var d=3-2*r;var c=ToSkiaColor(_currentColor);while(y>=x){DrawBrush(cX+x,cY+y,c);DrawBrush(cX-x,cY+y,c);DrawBrush(cX+x,cY-y,c);DrawBrush(cX-x,cY-y,c);DrawBrush(cX+y,cY+x,c);DrawBrush(cX-y,cY+x,c);DrawBrush(cX+y,cY-x,c);DrawBrush(cX-y,cY-x,c);x++;if(d>0){y--;d=d+4*(x-y)+10;}else{d=d+4*x+6;}}}
-    private void DrawRectangle(int x, int y, int w, int h) { var c=ToSkiaColor(_currentColor);for(var i=0;i<w;i++){DrawBrush(x+i,y,c);DrawBrush(x+i,y+h-1,c);}for(var i=1;i<h-1;i++){DrawBrush(x,y+i,c);DrawBrush(x+w-1,y+i,c);}}
-    private void FilledRectangle(int x, int y, int w, int h) { var c=ToSkiaColor(_currentColor);for(var j=0;j<h;j++)for(var i=0;i<w;i++)DrawBrush(x+i,y+j,c);}
-    private void FillCircle(int cX, int cY, int r) { var c=ToSkiaColor(_currentColor);for(int y=-r;y<=r;y++)for(int x=-r;x<=r;x++)if(x*x+y*y<=r*r)DrawBrush(cX+x,cY+y,c);}
+    private void DrawBrush(int cx, int cy, SKColor color) { for (int x = cx - _currentSize / 2; x <= cx + _currentSize / 2; x++) for (int y = cy - _currentSize / 2; y <= cy + _currentSize / 2; y++) if (IsInBounds(x, y)) _currentDraw.TryAdd((x, y), BlendColors(_skBitmap.GetPixel(x, y), color)); }
+    private void DrawCircle(int cX, int cY, int r) { var x = 0; var y = r; var d = 3 - 2 * r; var c = ToSkiaColor(_currentColor); while (y >= x) { DrawBrush(cX + x, cY + y, c); DrawBrush(cX - x, cY + y, c); DrawBrush(cX + x, cY - y, c); DrawBrush(cX - x, cY - y, c); DrawBrush(cX + y, cY + x, c); DrawBrush(cX - y, cY + x, c); DrawBrush(cX + y, cY - x, c); DrawBrush(cX - y, cY - x, c); x++; if (d > 0) { y--; d = d + 4 * (x - y) + 10; } else { d = d + 4 * x + 6; } } }
+    private void DrawRectangle(int x, int y, int w, int h) { var c = ToSkiaColor(_currentColor); for (var i = 0; i < w; i++) { DrawBrush(x + i, y, c); DrawBrush(x + i, y + h - 1, c); } for (var i = 1; i < h - 1; i++) { DrawBrush(x, y + i, c); DrawBrush(x + w - 1, y + i, c); } }
+    private void FilledRectangle(int x, int y, int w, int h) { var c = ToSkiaColor(_currentColor); for (var j = 0; j < h; j++) for (var i = 0; i < w; i++) DrawBrush(x + i, y + j, c); }
+    private void FillCircle(int cX, int cY, int r) { var c = ToSkiaColor(_currentColor); for (int y = -r; y <= r; y++) for (int x = -r; x <= r; x++) if (x * x + y * y <= r * r) DrawBrush(cX + x, cY + y, c); }
     private object Evaluate(Expr expr) => expr.Accept(this) ?? throw new InvalidOperationException("Evaluation resulted in null.");
     private SKColor ToSkiaColor(WallEColor c) => new SKColor(c.Red, c.Green, c.Blue, c.Alpha);
     private bool IsInBounds(int x, int y) => x >= 0 && x < _skBitmap.Width && y >= 0 && y < _skBitmap.Height;
-    private SKColor BlendColors(SKColor canvas, SKColor brush) { if (brush.Alpha == 255) return brush; if (brush.Alpha == 0) return canvas; var r = (brush.Red*brush.Alpha+canvas.Red*(255-brush.Alpha))/255; var g = (brush.Green*brush.Alpha+canvas.Green*(255-brush.Alpha))/255; var b = (brush.Blue*brush.Alpha+canvas.Blue*(255-brush.Alpha))/255; return new SKColor((byte)r,(byte)g,(byte)b); }
+    private SKColor BlendColors(SKColor canvas, SKColor brush) { if (brush.Alpha == 255) return brush; if (brush.Alpha == 0) return canvas; var r = (brush.Red * brush.Alpha + canvas.Red * (255 - brush.Alpha)) / 255; var g = (brush.Green * brush.Alpha + canvas.Green * (255 - brush.Alpha)) / 255; var b = (brush.Blue * brush.Alpha + canvas.Blue * (255 - brush.Alpha)) / 255; return new SKColor((byte)r, (byte)g, (byte)b); }
     private int ConvertToInt(object v, CodeLocation l, string c = "v") => v is IntegerOrBool iob ? iob : throw new RuntimeErrorException(new RuntimeError(l, $"Expected integer for {c}, got {v?.GetType().Name ?? "null"}."));
     private bool ConvertToBool(object v, CodeLocation l, string c = "v") => v is IntegerOrBool iob ? iob : throw new RuntimeErrorException(new RuntimeError(l, $"Expected boolean for {c}, got {v?.GetType().Name ?? "null"}."));
     private string ConvertToString(object v, CodeLocation l, string c = "v") => v is string s ? s : throw new RuntimeErrorException(new RuntimeError(l, $"Expected string for {c}, got {v?.GetType().Name ?? "null"}."));
-    private string ConvertValToString(object val, CodeLocation loc) { if(val is string s) return s; if(val is IntegerOrBool iob) { if(iob.Value is int i) return i.ToString(); if(iob.Value is bool b) return b.ToString().ToLowerInvariant(); } throw new RuntimeErrorException(new RuntimeError(loc, $"Cannot convert {val?.GetType().Name ?? "null"} to string.")); }
+    private string ConvertValToString(object val, CodeLocation loc) { if (val is string s) return s; if (val is IntegerOrBool iob) { if (iob.Value is int i) return i.ToString(); if (iob.Value is bool b) return b.ToString().ToLowerInvariant(); } throw new RuntimeErrorException(new RuntimeError(loc, $"Cannot convert {val?.GetType().Name ?? "null"} to string.")); }
     #endregion
 }

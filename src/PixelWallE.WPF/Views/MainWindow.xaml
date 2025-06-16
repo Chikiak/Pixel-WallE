@@ -7,6 +7,7 @@
     xmlns:viewModels="clr-namespace:PixelWallE.WPF.ViewModels"
     xmlns:behaviors="clr-namespace:PixelWallE.WPF.Behaviors"
     xmlns:converters="clr-namespace:PixelWallE.WPF.Converters"
+    xmlns:coreCommon="clr-namespace:PixelWallE.Core.Common;assembly=PixelWallE.Core"
     mc:Ignorable="d"
     Title="{Binding WindowTitle}" 
     Height="800" Width="1400"
@@ -23,10 +24,10 @@
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisConverter"/>
         <converters:StringContainsConverter x:Key="StringContainsConverter"/>
         
-        <x:Array x:Key="ExecutionModes" Type="viewModels:ExecutionMode">
-            <viewModels:ExecutionMode>Instant</viewModels:ExecutionMode>
-            <viewModels:ExecutionMode>StepByStep</viewModels:ExecutionMode>
-            <viewModels:ExecutionMode>PixelByPixel</viewModels:ExecutionMode>
+        <x:Array x:Key="ExecutionModes" Type="coreCommon:ExecutionMode">
+            <coreCommon:ExecutionMode>Instant</coreCommon:ExecutionMode>
+            <coreCommon:ExecutionMode>StepByStep</coreCommon:ExecutionMode>
+            <coreCommon:ExecutionMode>PixelByPixel</coreCommon:ExecutionMode>
         </x:Array>
     </Window.Resources>
 
