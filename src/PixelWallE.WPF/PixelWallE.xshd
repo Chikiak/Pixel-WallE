@@ -64,9 +64,9 @@
             <Word>or</Word>
         </Keywords>
 
-        <!-- Operador de asignación y otros (CORREGIDO) -->
+        <!-- Operador de asignación y otros (ACTUALIZADO) -->
         <Rule color="Operators">
-            &lt;-|==|!=|&gt;=|&lt;=|[+\-*/%&gt;&lt;]|\*\*
+            &lt;-|==|!=|&gt;=|&lt;=|&amp;&amp;|\|\||[+\-*/%&gt;&lt;]|\*\*
         </Rule>
         
         <!-- Variables -->

@@ -95,6 +95,12 @@ public class Lexer : ILexer
             case '<':
                 ScanLessOrAssign();
                 break;
+            case '&':
+                if (Match('&')) AddToken(TokenType.And);
+                break;
+            case '|':
+                if (Match('|')) AddToken(TokenType.And);
+                break;
             // Ignorar espacios en blanco
             case ' ':
             case '\r':
