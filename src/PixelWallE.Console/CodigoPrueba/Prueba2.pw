@@ -1,37 +1,13 @@
-Spawn(0,0)
+# PixelWallE Sample Code
+# Welcome to PixelWallE Studio!
+
+Spawn(0, 0)
+
+# Draw a blue circle
 Color("blue")
-Size(1)
+Size(3 / 2 / 2)
+DrawCircle(0, 0, 100)
 
-
-i <- 20
-b <- true
-
-GoTo[comenzar_circulo](true)
-
-
-
-circulo_azul
-Color("#8000adad")
-DrawCircle(GetRandomInt(-1, 1),GetRandomInt(-1, 1),GetRandomInt(5, 200))
-i <- i + 1
-GoTo[circulo_terminado](true)
-
-
-
-circulo_rojo
-Color("#80FF0000")
-DrawCircle(GetRandomInt(-1, 1),GetRandomInt(-1, 1),GetRandomInt(5, 200))
-i <- i + 1
-GoTo[circulo_terminado](true)
-
-
-
-circulo_terminado
-Color("transparent")
-#DrawLine(1,1,2)
-
-
-comenzar_circulo
-Filling(GetRandomInt(0,1))
-GoTo[circulo_azul](i%2 == 0)
-GoTo[circulo_rojo](i%2 == 1)
+# Fill with yellow
+Color("#FFFF00")
+Fill()

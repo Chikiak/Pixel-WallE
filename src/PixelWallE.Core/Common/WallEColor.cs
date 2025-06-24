@@ -46,6 +46,9 @@ public readonly struct WallEColor(byte red, byte green, byte blue, byte alpha = 
             case "transparent":
                 color = new WallEColor(0, 0, 0, 0);
                 return true;
+            case "random":
+                color = new WallEColor((byte)Random.Shared.Next(0, 256), (byte)Random.Shared.Next(0, 256), (byte)Random.Shared.Next(0, 256), (byte)Random.Shared.Next(0,256));;
+                return true;
         }
 
         // Formatos Hexadecimales

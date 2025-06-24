@@ -58,16 +58,16 @@ public class SkiaDrawingEngine
 
         var result = new Dictionary<(int x, int y), WallEColor>();
 
-        var startX = wallEState.Position.X + dirX * distance;
-        var startY = wallEState.Position.Y + dirY * distance;
+        var startX = wallEState.Position.X - width / 2;
+        var startY = wallEState.Position.Y - height / 2;
 
         if (wallEState.IsFilling)
             DrawFilledRectangle(startX, startY, width, height, wallEState.BrushSize, wallEState.Color, canvas, result);
         else
             DrawRectangleOutline(startX, startY, width, height, wallEState.BrushSize, wallEState.Color, canvas, result);
 
-        var centerX = startX + width / 2;
-        var centerY = startY + height / 2;
+        var centerX = wallEState.Position.X + dirX * distance;
+        var centerY = wallEState.Position.Y + dirY * distance;
         wallEState.SetPosition(centerX, centerY);
 
         return result;
@@ -137,9 +137,6 @@ public class SkiaDrawingEngine
     {
         if (Math.Abs(dirX) > 1 || Math.Abs(dirY) > 1)
             throw new ArgumentException("Direction values must be -1, 0, or 1");
-
-        if (dirX == 0 && dirY == 0 && distance != 0)
-            throw new ArgumentException("Invalid direction for non-zero distance");
     }
 
     private void ValidateDir(int dirX, int dirY)
@@ -174,7 +171,7 @@ public class SkiaDrawingEngine
         var x = 0;
         var y = radius;
         var d = 3 - 2 * radius;
-
+        
         DrawCirclePoints(centerX, centerY, x, y, brushSize, color, canvas, result);
 
         while (y >= x)

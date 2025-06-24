@@ -1,4 +1,5 @@
 ﻿using PixelWallE.Core.Common;
+using PixelWallE.Core.DevUtils;
 using PixelWallE.Core.Drawing;
 using PixelWallE.Core.Errors;
 using PixelWallE.Core.Services;
@@ -10,7 +11,6 @@ internal static class Program
 {
     private static readonly List<Error> Errors = new();
 
-    // Main sigue siendo asíncrono
     private static async Task Main(string[] args)
     {
         Errors.Clear();
@@ -68,6 +68,7 @@ internal static class Program
         }
 
         var programAst = compileResult.Value;
+       
         var executionService = new ExecutionService();
         SKBitmap? finalBitmap = null;
 
@@ -80,20 +81,14 @@ internal static class Program
         // Este se ejecutará cada vez que el intérprete reporte un progreso.
         var progressHandler = new Progress<DrawingUpdate>(update =>
         {
-            // Para una app de consola, solo nos interesan los estados finales.
-            // Opcional: mostrar actividad para los pasos intermedios.
             if (update.Type == DrawingUpdateType.Step) Console.Write(".");
-
-            // Cuando la ejecución termina (ya sea por completarse o por un error),
-            // capturamos el resultado y señalamos al TaskCompletionSource.
+            
             if (update.Type == DrawingUpdateType.Complete || update.Type == DrawingUpdateType.Error)
             {
-                Console.WriteLine(); // Salto de línea después de los puntos de progreso.
+                Console.WriteLine();
                 finalBitmap = update.Bitmap?.Copy();
                 if (update.Errors != null) Errors.AddRange(update.Errors);
 
-                // Si el update es de error y trae un mensaje, lo añadimos como error genérico.
-                // Útil para errores como el límite de ejecución.
                 if (update.Type == DrawingUpdateType.Error && !string.IsNullOrEmpty(update.Message) &&
                     (update.Errors == null || !update.Errors.Any()))
                     Errors.Add(new RuntimeError(new CodeLocation(0, 0), update.Message));
@@ -102,8 +97,6 @@ internal static class Program
             }
         });
 
-        // Inicia la ejecución con la nueva firma del método, pasando el progress handler,
-        // el delay (0) y el modo de ejecución (Instant).
         await executionService.ExecuteAsync(
             programAst,
             null, // Sin bitmap inicial
@@ -130,7 +123,6 @@ internal static class Program
                 using var stream = File.OpenWrite(outputPath);
 
                 data.SaveTo(stream);
-
                 Console.WriteLine($"Image saved to {outputPath}");
             }
             catch (Exception ex)
