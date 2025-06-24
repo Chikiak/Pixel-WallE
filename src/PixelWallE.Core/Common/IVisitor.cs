@@ -41,4 +41,5 @@ public interface IVisitor<T>
     T VisitAssignStmt(AssignStmt stmt);
     T VisitLabelStmt(LabelStmt stmt);
     T VisitGoToStmt(GoToStmt stmt);
+    T VisitFillingStmt(FillingStmt fillingStmt);
 }

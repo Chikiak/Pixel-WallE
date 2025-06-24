@@ -56,6 +56,7 @@ public class Parser : IParser
         if (Match(TokenType.DrawCircle)) return ParseDrawCircleStmt();
         if (Match(TokenType.DrawRectangle)) return ParseDrawRectangleStmt();
         if (Match(TokenType.Fill)) return ParseFillStmt();
+        if (Match(TokenType.Filling)) return ParseFillingStmt();
         if (Match(TokenType.GoTo)) return ParseGoToStmt();
 
         // Asignación
@@ -262,6 +263,19 @@ public class Parser : IParser
 
         return new FillStmt(location);
     }
+    
+    private FillingStmt ParseFillingStmt()
+    {
+        var location = Previous().Location;
+        Consume(TokenType.LeftParen, "Se esperaba '(' después de 'Filling'");
+
+        var boolExpr = ParseExpression();
+
+        Consume(TokenType.RightParen, "Se esperaba ')' después del booleano de Filling");
+        ConsumeEndLine();
+
+        return new FillingStmt(boolExpr, location);
+    }
 
     private GoToStmt ParseGoToStmt()
     {
@@ -320,7 +334,6 @@ public class Parser : IParser
         return ParseLogicalAnd();
     }
 
-    // Or has more precedence
     private Expr ParseLogicalAnd()
     {
         var expr = ParseLogicalOr();

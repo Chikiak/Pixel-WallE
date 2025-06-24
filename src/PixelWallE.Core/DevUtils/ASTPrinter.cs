@@ -227,6 +227,11 @@ public class ASTPrinter : IVisitor<string>
                VisitWithIndent(stmt.Condition);
     }
 
+    public string VisitFillingStmt(FillingStmt stmt)
+    {
+        return Indent("Filling:\n") + VisitWithIndent(stmt.BoolExpr);
+    }
+
     public string Print(ASTNode node)
     {
         return node.Accept(this);

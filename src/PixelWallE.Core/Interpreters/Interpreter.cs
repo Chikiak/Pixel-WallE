@@ -221,6 +221,13 @@ public class Interpreter : IInterpreter, IVisitor<object?>
     {
         return null;
     }
+    
+    public object? VisitFillingStmt(FillingStmt stmt)
+    {
+        var boolVal = ConvertToBool(Evaluate(stmt.BoolExpr), stmt.BoolExpr.Location, "Filling argument");
+        _wallEState.SetFilling(boolVal);
+        return null;
+    }
 
     public object? VisitAssignStmt(AssignStmt stmt)
     {
@@ -432,29 +439,40 @@ public class Interpreter : IInterpreter, IVisitor<object?>
                 : throw new RuntimeErrorException(new RuntimeError(e.Arguments[0].Location, "Invalid color string.")),
             "IsBrushSize" => new IntegerOrBool(_wallEState.BrushSize == ConvertToInt(a[0], e.Arguments[0].Location)),
             "IsCanvasColor" => IsCanvasColorImpl(e, a),
-            "GetColorCount" => GetColorCountImpl(e, a),
+            "GetColorCount" => GetColorCountImpl(e, a), 
+            "GetRandomInt" => GetRandomIntImpl(e, a),
             _ => throw new RuntimeErrorException(new RuntimeError(e.Location,
                 $"Function '{e.CalledFunction}' not defined."))
         };
     }
 
-    private object IsCanvasColorImpl(CallExpr e, List<object> a)
+    private object GetRandomIntImpl(CallExpr callExpr, List<object> args)
     {
-        if (!WallEColor.TryParse(ConvertToString(a[0], e.Arguments[0].Location), out var c))
-            throw new RuntimeErrorException(new RuntimeError(e.Arguments[0].Location, "Invalid color string."));
-        var (x, y) = (ConvertToInt(a[1], e.Arguments[1].Location), ConvertToInt(a[2], e.Arguments[2].Location));
+        var min = ConvertToInt(args[0], callExpr.Arguments[0].Location);
+        var max = ConvertToInt(args[1], callExpr.Arguments[1].Location);
+        if (min > max)
+            throw new RuntimeErrorException(new RuntimeError(callExpr.Arguments[0].Location,
+                "Minimum value must be less than maximum value."));
+        return new IntegerOrBool(new Random().Next(min, max + 1));
+    }
+
+    private object IsCanvasColorImpl(CallExpr callExpr, List<object> args)
+    {
+        if (!WallEColor.TryParse(ConvertToString(args[0], callExpr.Arguments[0].Location), out var c))
+            throw new RuntimeErrorException(new RuntimeError(callExpr.Arguments[0].Location, "Invalid color string."));
+        var (x, y) = (ConvertToInt(args[1], callExpr.Arguments[1].Location), ConvertToInt(args[2], callExpr.Arguments[2].Location));
         if (!_canvas.IsInBounds(x, y)) return new IntegerOrBool(false);
         var pixelColor = _canvas.GetPixel(x, y);
         return new IntegerOrBool(pixelColor == c);
     }
 
-    private object GetColorCountImpl(CallExpr e, List<object> a)
+    private object GetColorCountImpl(CallExpr callExpr, List<object> args)
     {
-        if (!WallEColor.TryParse(ConvertToString(a[0], e.Arguments[0].Location), out var c))
-            throw new RuntimeErrorException(new RuntimeError(e.Arguments[0].Location, "Invalid color string."));
-        var (x1, y1, x2, y2) = (ConvertToInt(a[1], e.Arguments[1].Location),
-            ConvertToInt(a[2], e.Arguments[2].Location), ConvertToInt(a[3], e.Arguments[3].Location),
-            ConvertToInt(a[4], e.Arguments[4].Location));
+        if (!WallEColor.TryParse(ConvertToString(args[0], callExpr.Arguments[0].Location), out var c))
+            throw new RuntimeErrorException(new RuntimeError(callExpr.Arguments[0].Location, "Invalid color string."));
+        var (x1, y1, x2, y2) = (ConvertToInt(args[1], callExpr.Arguments[1].Location),
+            ConvertToInt(args[2], callExpr.Arguments[2].Location), ConvertToInt(args[3], callExpr.Arguments[3].Location),
+            ConvertToInt(args[4], callExpr.Arguments[4].Location));
         var (startX, endX) = (Math.Min(x1, x2), Math.Max(x1, x2));
         var (startY, endY) = (Math.Min(y1, y2), Math.Max(y1, y2));
         var count = 0;

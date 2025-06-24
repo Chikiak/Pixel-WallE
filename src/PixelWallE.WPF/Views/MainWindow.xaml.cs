@@ -128,6 +128,7 @@ public partial class MainWindow : Window
             <Word>DrawCircle</Word>
             <Word>DrawRectangle</Word>
             <Word>Fill</Word>
+            <Word>Filling</Word>
             <Word>GoTo</Word>
         </Keywords>
         
@@ -140,6 +141,7 @@ public partial class MainWindow : Window
             <Word>IsBrushColor</Word>
             <Word>IsBrushSize</Word>
             <Word>IsCanvasColor</Word>
+            <Word>GetRandomInt</Word>
         </Keywords>
 
         <!-- Logical keywords -->

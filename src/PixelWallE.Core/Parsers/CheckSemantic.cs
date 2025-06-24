@@ -294,6 +294,11 @@ public class CheckSemantic : IVisitor<Result<Type>>
     {
         return Result<Type>.Success(typeof(void));
     }
+    public Result<Type> VisitFillingStmt(FillingStmt stmt)
+    {
+        CheckCommandArg(stmt.BoolExpr, typeof(IntegerOrBool), "Filling", "booleanVal", stmt.BoolExpr.Location);
+        return Result<Type>.Success(typeof(void));
+    }
 
     public Result<Type> VisitAssignStmt(AssignStmt stmt)
     {
@@ -307,7 +312,7 @@ public class CheckSemantic : IVisitor<Result<Type>>
             return Result<Type>.Failure(error);
         }
 
-        _symbolTable[stmt.Name] = valueResult.Value; // Almacena el tipo (ej. IntegerOrBool, string)
+        _symbolTable[stmt.Name] = valueResult.Value;
         return Result<Type>.Success(typeof(void));
     }
 
@@ -350,6 +355,9 @@ public class CheckSemantic : IVisitor<Result<Type>>
             new List<Type> { typeof(IntegerOrBool) }));
         _definedFunctions.Add("IsCanvasColor", new FunctionSignature("IsCanvasColor", typeof(IntegerOrBool),
             new List<Type> { typeof(string), typeof(IntegerOrBool), typeof(IntegerOrBool) }));
+        _definedFunctions.Add("GetRandomInt",
+            new FunctionSignature("GetRandomInt", typeof(IntegerOrBool),
+                new List<Type> { typeof(IntegerOrBool), typeof(IntegerOrBool) }));
     }
 
     public Result<object> Analize(ProgramStmt program)
