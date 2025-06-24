@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <SyntaxDefinition name="PixelWallE" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
 
-    <!-- Definición de Colores (Tema Oscuro tipo VSCode) -->
-    <Color name="Comment" foreground="#6A9955" fontStyle="italic"/>
-    <Color name="String" foreground="#CE9178"/>
-    <Color name="Number" foreground="#B5CEA8"/>
-    <Color name="Boolean" foreground="#569CD6" fontWeight="bold"/>
-    <Color name="Commands" foreground="#C586C0" fontWeight="bold"/>
-    <Color name="Functions" foreground="#DCDCAA"/>
-    <Color name="Variables" foreground="#9CDCFE"/>
-    <Color name="Operators" foreground="#D4D4D4"/>
-    <Color name="Keywords" foreground="#569CD6" fontWeight="bold"/>
-    <Color name="Labels" foreground="#4EC9B0" fontStyle="italic"/>
+    <!-- Definición de Colores (SIN COLORES FIJOS) -->
+    <Color name="Comment" fontStyle="italic"/>
+    <Color name="String" />
+    <Color name="Number" />
+    <Color name="Boolean" fontWeight="bold"/>
+    <Color name="Commands" fontWeight="bold"/>
+    <Color name="Functions" />
+    <Color name="Variables" />
+    <Color name="Operators" />
+    <Color name="Keywords" fontWeight="bold"/>
+    <Color name="Labels" fontStyle="italic"/>
 
     <!-- Reglas Principales -->
     <RuleSet>
@@ -66,7 +66,7 @@
 
         <!-- Operador de asignación y otros (ACTUALIZADO) -->
         <Rule color="Operators">
-            &lt;-|==|!=|&gt;=|&lt;=|&amp;&amp;|\|\||[+\-*/%&gt;&lt;]|\*\*
+            <-|==|!=|>=|<=|&&|\|\||[+\-*/%><]|\*\*
         </Rule>
         
         <!-- Variables -->

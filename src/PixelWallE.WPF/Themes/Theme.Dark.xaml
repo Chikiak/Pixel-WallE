@@ -1,4 +1,3 @@
-<!-- File: Themes/Theme.Dark.xaml -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
@@ -34,4 +33,16 @@
     <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
     <SolidColorBrush x:Key="MutedBrush" Color="{StaticResource MutedTextColor}"/>
     <SolidColorBrush x:Key="SeparatorBrush" Color="{StaticResource SeparatorColor}"/>
+    
+    <SolidColorBrush x:Key="SyntaxCommentBrush" Color="#6A9955"/>
+    <SolidColorBrush x:Key="SyntaxStringBrush" Color="#CE9178"/>
+    <SolidColorBrush x:Key="SyntaxNumberBrush" Color="#B5CEA8"/>
+    <SolidColorBrush x:Key="SyntaxBooleanBrush" Color="#569CD6"/>
+    <SolidColorBrush x:Key="SyntaxCommandsBrush" Color="#C586C0"/>
+    <SolidColorBrush x:Key="SyntaxFunctionsBrush" Color="#DCDCAA"/>
+    <SolidColorBrush x:Key="SyntaxVariablesBrush" Color="#9CDCFE"/>
+    <SolidColorBrush x:Key="SyntaxOperatorsBrush" Color="#D4D4D4"/>
+    <SolidColorBrush x:Key="SyntaxKeywordsBrush" Color="#569CD6"/>
+    <SolidColorBrush x:Key="SyntaxLabelsBrush" Color="#4EC9B0"/>
+
 </ResourceDictionary>
