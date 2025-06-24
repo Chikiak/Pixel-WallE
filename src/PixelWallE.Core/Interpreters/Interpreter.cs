@@ -229,6 +229,17 @@ public class Interpreter : IInterpreter, IVisitor<object?>
         return null;
     }
 
+    public object? VisitRespawnStmt(RespawnStmt stmt)
+    {
+        var x = ConvertToInt(Evaluate(stmt.X), stmt.X.Location, nameof(stmt.X));
+        var y = ConvertToInt(Evaluate(stmt.Y), stmt.Y.Location, nameof(stmt.Y));
+        if (!_canvas.IsInBounds(x, y))
+            throw new RuntimeErrorException(new RuntimeError(stmt.Location,
+                $"Respawn coordinates ({x},{y}) out of canvas range ({_canvas.Width}x{_canvas.Height})."));
+        _wallEState.SetPosition(x, y);
+        return null;
+    }
+
     public object? VisitAssignStmt(AssignStmt stmt)
     {
         _environment[stmt.Name] = Evaluate(stmt.Value);

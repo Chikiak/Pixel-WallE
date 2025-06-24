@@ -300,6 +300,13 @@ public class CheckSemantic : IVisitor<Result<Type>>
         return Result<Type>.Success(typeof(void));
     }
 
+    public Result<Type> VisitRespawnStmt(RespawnStmt stmt)
+    {
+        CheckCommandArg(stmt.X, typeof(IntegerOrBool), "Respawn", "X", stmt.X.Location);
+        CheckCommandArg(stmt.Y, typeof(IntegerOrBool), "Respawn", "Y", stmt.Y.Location);
+        return Result<Type>.Success(typeof(void));
+    }
+
     public Result<Type> VisitAssignStmt(AssignStmt stmt)
     {
         var valueResult = stmt.Value.Accept(this);

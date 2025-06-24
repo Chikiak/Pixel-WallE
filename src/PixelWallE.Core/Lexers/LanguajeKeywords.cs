@@ -7,6 +7,7 @@ public static class LanguajeKeywords
     private static readonly IReadOnlyDictionary<string, TokenType> KeywordsMap = new Dictionary<string, TokenType>
     {
         { "Spawn", TokenType.Spawn },
+        { "Respawn", TokenType.Respawn },
         { "Color", TokenType.Color },
         { "Size", TokenType.Size },
         { "DrawLine", TokenType.DrawLine },

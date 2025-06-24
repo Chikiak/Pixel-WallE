@@ -40,6 +40,7 @@ public enum TokenType
     DrawRectangle,
     Fill,
     Filling,
+    Respawn,
 
     //Palabras Clave
     And,

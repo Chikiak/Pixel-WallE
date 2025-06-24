@@ -168,7 +168,14 @@ public class ASTPrinter : IVisitor<string>
                VisitWithIndent(stmt.X) + "\n" +
                VisitWithIndent(stmt.Y);
     }
-
+    
+    public string VisitRespawnStmt(RespawnStmt stmt)
+    {
+        return Indent("Respawn:\n") +
+               VisitWithIndent(stmt.X) + "\n" +
+               VisitWithIndent(stmt.Y);
+    }
+    
     public string VisitColorStmt(ColorStmt stmt)
     {
         return Indent("Color:\n") + VisitWithIndent(stmt.ColorExpr);

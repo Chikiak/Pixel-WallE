@@ -42,4 +42,5 @@ public interface IVisitor<T>
     T VisitLabelStmt(LabelStmt stmt);
     T VisitGoToStmt(GoToStmt stmt);
     T VisitFillingStmt(FillingStmt fillingStmt);
+    T VisitRespawnStmt(RespawnStmt respawnStmt);
 }

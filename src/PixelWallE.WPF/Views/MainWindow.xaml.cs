@@ -122,6 +122,7 @@ public partial class MainWindow : Window
         <!-- Main Commands -->
         <Keywords color=""Commands"">
             <Word>Spawn</Word>
+            <Word>Respawn</Word>
             <Word>Color</Word>
             <Word>Size</Word>
             <Word>DrawLine</Word>

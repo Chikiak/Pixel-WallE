@@ -50,6 +50,7 @@ public class Parser : IParser
     {
         // Comandos de dibujo
         if (Match(TokenType.Spawn)) return ParseSpawnStmt();
+        if (Match(TokenType.Respawn)) return ParseRespawnStmt();
         if (Match(TokenType.Color)) return ParseColorStmt();
         if (Match(TokenType.Size)) return ParseSizeStmt();
         if (Match(TokenType.DrawLine)) return ParseDrawLineStmt();
@@ -69,6 +70,8 @@ public class Parser : IParser
         // Expresión como statement
         return ParseExpressionStmt();
     }
+
+    
 
     private Token Peek()
     {
@@ -173,6 +176,20 @@ public class Parser : IParser
         return new SpawnStmt(x, y, location);
     }
 
+    private Stmt ParseRespawnStmt()
+    {
+        var location = Previous().Location;
+        Consume(TokenType.LeftParen, "Se esperaba '(' después de 'Respawn'");
+
+        var x = ParseExpression();
+        Consume(TokenType.Comma, "Se esperaba ',' después del primer argumento");
+        var y = ParseExpression();
+
+        Consume(TokenType.RightParen, "Se esperaba ')' después de los argumentos de Respawn");
+        ConsumeEndLine();
+
+        return new RespawnStmt(x, y, location);
+    }
     private ColorStmt ParseColorStmt()
     {
         var location = Previous().Location;
