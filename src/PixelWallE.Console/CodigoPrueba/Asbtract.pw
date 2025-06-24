@@ -1,0 +1,27 @@
+Spawn(1920 / 2, 1280 / 2)
+
+
+GoTo[Moverse](true)
+
+# Draw a circle
+circulo_azul
+Color("#800000ff")
+Size(GetRandomInt(10,100))
+Filling(GetRandomInt(0,1))
+DrawCircle(0, 0, GetRandomInt(10, 400))
+GoTo[Moverse](true)
+circulo_rojo
+Color("#80ff0000")
+Size(GetRandomInt(10,100))
+Filling(GetRandomInt(0,1))
+DrawCircle(0, 0, GetRandomInt(10, 400))
+GoTo[Moverse](true)
+
+Dibujar_Figura
+i <- GetRandomInt(1, 10)
+GoTo[circulo_rojo](i % 2 == 0)
+GoTo[circulo_azul]( i % 2 == 1)
+
+Moverse
+Respawn(GetRandomInt(0,1920),GetRandomInt(0,1280))
+GoTo[Dibujar_Figura](true)

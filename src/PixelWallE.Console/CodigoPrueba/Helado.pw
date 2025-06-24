@@ -1,0 +1,380 @@
+# Pixel Art de Chopper (One Piece) NO 
+# Helado feliz
+#  
+# Canvas 30x30
+# Este script dibuja a Chopper pixel a pixel.
+
+# Coordenada inicial para desplazar el dibujo
+Spawn(0,0)
+offset_x <- 0
+offset_y <- 0
+
+# Define colores comunes
+COLOR_PIEL <- "Orange"   # Usamos Orange como un color cercano a la piel tostada
+COLOR_ROJO <- "Red"
+COLOR_BLANCO <- "White"
+COLOR_NEGRO <- "Black"
+COLOR_ROSA <- "Purple"   # Usamos Purple como un color cercano al rosa fuerte
+COLOR_AZUL <- "Blue"
+COLOR_MARRON <- "Yellow" # Usamos Yellow como un color cercano al marron claro
+
+# Inicio del dibujo principal
+Respawn(offset_x, offset_y)
+Size(1) # Siempre usaremos pincel de 1 para pixel art
+
+# Dibujar la base del cuerpo y las piernas (parte inferior)
+# Usando Color("Orange") para simular COLOR_PIEL
+x_val <- 10
+y_val <- 25
+color_str <- COLOR_PIEL
+size_val <- 1
+
+loop_piernas_1
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_piernas_1] (x_val < 16)
+
+x_val <- 10 # Reiniciar x para la siguiente fila
+y_val <- 26
+loop_piernas_2
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_piernas_2] (x_val < 16)
+
+# Calzoncillos rojos
+x_val <- 11
+y_val <- 24
+color_str <- COLOR_ROJO
+loop_calzoncillos_1
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_calzoncillos_1] (x_val < 15)
+
+x_val <- 10
+y_val <- 23
+color_str <- COLOR_ROJO
+loop_calzoncillos_2
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_calzoncillos_2] (x_val < 16)
+
+# Torso
+x_val <- 9
+y_val <- 22
+color_str <- COLOR_PIEL
+loop_torso_1
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_torso_1] (x_val < 17)
+
+x_val <- 9
+y_val <- 21
+loop_torso_2
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_torso_2] (x_val < 17)
+
+x_val <- 9
+y_val <- 20
+loop_torso_3
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_torso_3] (x_val < 17)
+
+# Brazos (simplificado)
+x_val <- 8
+y_val <- 21
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 17
+y_val <- 21
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+# Cabeza y cara (parte inferior)
+x_val <- 7
+y_val <- 19
+color_str <- COLOR_PIEL
+loop_cabeza_1
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_cabeza_1] (x_val < 19)
+
+x_val <- 7
+y_val <- 18
+loop_cabeza_2
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_cabeza_2] (x_val < 19)
+
+# Ojos y nariz
+x_val <- 9
+y_val <- 17
+color_str <- COLOR_BLANCO
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Ojo izquierdo
+
+x_val <- 16
+y_val <- 17
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Ojo derecho
+
+x_val <- 12
+y_val <- 17
+color_str <- COLOR_AZUL
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Nariz
+
+# Sombrero (visera negra)
+x_val <- 5
+y_val <- 16
+color_str <- COLOR_NEGRO
+loop_visera_1
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_visera_1] (x_val < 21)
+
+x_val <- 6
+y_val <- 15
+loop_visera_2
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_visera_2] (x_val < 20)
+
+# Sombrero (rosa)
+x_val <- 7
+y_val <- 14
+color_str <- COLOR_ROSA
+loop_sombrero_rosa_1
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_sombrero_rosa_1] (x_val < 19)
+
+x_val <- 7
+y_val <- 13
+loop_sombrero_rosa_2
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_sombrero_rosa_2] (x_val < 19)
+
+x_val <- 7
+y_val <- 12
+loop_sombrero_rosa_3
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_sombrero_rosa_3] (x_val < 19)
+
+# Astas del sombrero (negro y marrón)
+# Lado izquierdo
+x_val <- 4
+y_val <- 14
+color_str <- COLOR_NEGRO
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 3
+y_val <- 13
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 2
+y_val <- 12
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 5
+y_val <- 13
+color_str <- COLOR_MARRON
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 4
+y_val <- 12
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 3
+y_val <- 11
+color_str <- COLOR_MARRON
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+# Lado derecho
+x_val <- 21
+y_val <- 14
+color_str <- COLOR_NEGRO
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 22
+y_val <- 13
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 23
+y_val <- 12
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 20
+y_val <- 13
+color_str <- COLOR_MARRON
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 21
+y_val <- 12
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 22
+y_val <- 11
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+# Botones blancos en el sombrero
+x_val <- 8
+y_val <- 13
+color_str <- COLOR_BLANCO
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 11
+y_val <- 13
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 14
+y_val <- 13
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 17
+y_val <- 13
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 9
+y_val <- 12
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 10
+y_val <- 12
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 15
+y_val <- 12
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+x_val <- 16
+y_val <- 12
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+
+# Borde superior del sombrero
+x_val <- 8
+y_val <- 11
+color_str <- COLOR_NEGRO
+loop_borde_sombrero
+Respawn(x_val + offset_x, y_val + offset_y)
+Color(color_str)
+Size(size_val)
+DrawLine(0,0,1) # Dibuja un solo pixel
+x_val <- x_val + 1
+GoTo [loop_borde_sombrero] (x_val < 18)
