@@ -1,0 +1,109 @@
+Spawn(30,45)
+Color("#ADD8E6")
+Fill()
+
+Color("Blue")
+i <- -2
+loop1
+i <- i + 3
+DrawCircle(0,0,i )
+GoTo[loop1](i<10)
+
+center1EyeX <- GetActualX()
+center1EyeY <- GetActualY()
+k<-0
+loop2
+Color("Red")
+Fill()
+Color("Transparent")
+DrawLine(1,0,3)
+k <- k + 1
+GoTo[loop2](k<4)
+
+Respawn(70,45)
+Color("Blue")
+i <- -2
+loop3
+i <- i + 3
+DrawCircle(0,0,i )
+GoTo[loop3](i<10)
+
+center2EyeX <- GetActualX()
+center2EyeY <- GetActualY()
+k<-0
+loop4
+Color("Red")
+Fill()
+Color("Transparent")
+DrawLine(1,0,3)
+k <- k + 1
+GoTo[loop4](k<4)
+
+Color("Transparent")
+
+DrawLine(-1,0,32)
+
+Color("Green")
+DrawCircle(0,0,35)
+Color("#DEB887")
+Fill()
+Color("Black")
+DrawCircle(0,0,36)
+
+Color("Transparent")
+DrawLine(0,1,5)
+
+Size(4)
+
+Color("Red")
+DrawLine(0,-1,3)
+
+Color("Transparent")
+
+DrawLine(0,1,25)
+
+Color("Blue")
+DrawLine(1,0,15)
+DrawLine(-1,0,30)
+
+DrawLine(1,0,15)
+
+Color("Transparent")
+DrawLine(0,1,5)
+Color("Black")
+DrawLine(0,1,2)
+shinCursorX <- GetActualX()
+shinCursorY <- GetActualY()
+
+Respawn(center1EyeX , center1EyeY)
+
+DrawLine(1,0,3)
+
+Respawn(center2EyeX , center2EyeY)
+DrawLine(-1,0,3)
+
+Respawn(shinCursorX , shinCursorY+35)
+
+Size(1)
+Color("Red")
+DrawRectangle(0,0,0,50,64)
+Fill()
+Color("Black")
+DrawRectangle(0,0,0,50,65)
+
+numeroDeBotones <- 6
+distanciaEntreBotones <- 5
+tamanoDeBoton <- 2
+colorDeBotones <- "Yellow"
+
+
+Color("Transparent")
+DrawLine(0,-1,20)
+i <- 0
+hacerBotones
+Color(colorDeBotones)
+DrawCircle(0,0,tamanoDeBoton)
+Color("Transparent")
+DrawLine(0,1,tamanoDeBoton+distanciaEntreBotones)
+i <- i+1
+GoTo[hacerBotones](i<numeroDeBotones)

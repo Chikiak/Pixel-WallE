@@ -1,0 +1,21 @@
+Spawn(250, 250)
+
+# Draw a blue circle
+Color("blue")
+Size(3)
+DrawCircle(0, 0, 100)
+
+# Fill with yellow
+Color("#FFFF00")
+Fill()
+
+Respawn(0, 0)
+
+# Draw a blue circle
+Color("blue")
+Size(3)
+DrawCircle(0, 0, 100)
+
+# Fill with yellow
+Color("#FFFF00")
+Fill()

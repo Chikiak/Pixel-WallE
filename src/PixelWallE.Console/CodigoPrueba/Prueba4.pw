@@ -1,0 +1,13 @@
+# PixelWallE Sample Code
+# Welcome to PixelWallE Studio!
+
+Spawn(15, 15)
+
+# Draw a blue circle
+Color("blue")
+Size(3)
+DrawCircle(0, 0, 8)
+
+# Fill with yellow
+Color("#FFFF00")
+Fill()
