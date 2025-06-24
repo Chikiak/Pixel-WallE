@@ -1,5 +1,5 @@
-using ICSharpCode.AvalonEdit;
 using System.Windows;
+using ICSharpCode.AvalonEdit;
 
 namespace PixelWallE.WPF.Behaviors;
 
@@ -30,22 +30,16 @@ public static class TextEditorBehavior
         if (d is TextEditor textEditor)
         {
             textEditor.TextChanged -= TextEditor_TextChanged;
-                
+
             var newText = e.NewValue as string ?? string.Empty;
-            if (textEditor.Text != newText)
-            {
-                textEditor.Text = newText;
-            }
-                
+            if (textEditor.Text != newText) textEditor.Text = newText;
+
             textEditor.TextChanged += TextEditor_TextChanged;
         }
     }
 
-    private static void TextEditor_TextChanged(object? sender, System.EventArgs e)
+    private static void TextEditor_TextChanged(object? sender, EventArgs e)
     {
-        if (sender is TextEditor textEditor)
-        {
-            SetBoundText(textEditor, textEditor.Text);
-        }
+        if (sender is TextEditor textEditor) SetBoundText(textEditor, textEditor.Text);
     }
 }

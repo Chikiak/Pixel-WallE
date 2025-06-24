@@ -9,9 +9,9 @@ namespace PixelWallE.Core.Parsers;
 
 public class Parser : IParser
 {
-    private IReadOnlyList<Token> _tokens;
-    private int _current = 0;
     private readonly List<Error> _errors = new();
+    private int _current;
+    private IReadOnlyList<Token> _tokens;
 
     public Result<ProgramStmt> Parse(IReadOnlyList<Token> tokens)
     {
@@ -67,6 +67,92 @@ public class Parser : IParser
             return ParseLabelStmt();
         // Expresión como statement
         return ParseExpressionStmt();
+    }
+
+    private Token Peek()
+    {
+        return _tokens[_current];
+    }
+
+    private Token Previous()
+    {
+        if (_current == 0) return _tokens[0];
+        return _tokens[_current - 1];
+    }
+
+    private bool IsAtEnd()
+    {
+        return Peek().Is(TokenType.EOF);
+    }
+
+    private Token Advance()
+    {
+        if (!IsAtEnd()) _current++;
+        return Previous();
+    }
+
+    private bool Check(TokenType type)
+    {
+        if (IsAtEnd()) return false;
+        return Peek().Is(type);
+    }
+
+    private bool CheckNext(TokenType type)
+    {
+        if (_current + 1 >= _tokens.Count) return false;
+        return _tokens[_current + 1].Is(type);
+    }
+
+    private bool Match(params TokenType[] types)
+    {
+        if (Peek().IsAny(types))
+        {
+            Advance();
+            return true;
+        }
+
+        return false;
+    }
+
+    private Token Consume(TokenType type, string message)
+    {
+        if (Check(type))
+            return Advance();
+
+        var current = Peek();
+        throw new SyntaxException(message);
+    }
+
+    private void ConsumeEndLine()
+    {
+        if (Check(TokenType.Endl))
+        {
+            Advance();
+        }
+        else if (!IsAtEnd())
+        {
+            var message = "Se esperaba nueva línea al final del statement";
+            throw new SyntaxException(message);
+        }
+    }
+
+    private void AddError(string message)
+    {
+        _errors.Add(new SyntaxError(Peek().Location, message, Peek()));
+    }
+
+    private void Synchronize()
+    {
+        Advance();
+        while (!IsAtEnd())
+        {
+            if (Previous().Is(TokenType.Endl)) return;
+
+            if (Peek().IsCommand() || Peek().Is(TokenType.Identifier))
+                return;
+
+            Advance();
+        }
     }
 
     #region Statement Parsers
@@ -468,90 +554,4 @@ public class Parser : IParser
     }
 
     #endregion
-
-    private Token Peek()
-    {
-        return _tokens[_current];
-    }
-
-    private Token Previous()
-    {
-        if (_current == 0) return _tokens[0];
-        return _tokens[_current - 1];
-    }
-
-    private bool IsAtEnd()
-    {
-        return Peek().Is(TokenType.EOF);
-    }
-
-    private Token Advance()
-    {
-        if (!IsAtEnd()) _current++;
-        return Previous();
-    }
-
-    private bool Check(TokenType type)
-    {
-        if (IsAtEnd()) return false;
-        return Peek().Is(type);
-    }
-
-    private bool CheckNext(TokenType type)
-    {
-        if (_current + 1 >= _tokens.Count) return false;
-        return _tokens[_current + 1].Is(type);
-    }
-
-    private bool Match(params TokenType[] types)
-    {
-        if (Peek().IsAny(types))
-        {
-            Advance();
-            return true;
-        }
-
-        return false;
-    }
-
-    private Token Consume(TokenType type, string message)
-    {
-        if (Check(type))
-            return Advance();
-
-        var current = Peek();
-        throw new SyntaxException(message);
-    }
-
-    private void ConsumeEndLine()
-    {
-        if (Check(TokenType.Endl))
-        {
-            Advance();
-        }
-        else if (!IsAtEnd())
-        {
-            var message = "Se esperaba nueva línea al final del statement";
-            throw new SyntaxException(message);
-        }
-    }
-
-    private void AddError(string message)
-    {
-        _errors.Add(new SyntaxError(Peek().Location, message, Peek()));
-    }
-
-    private void Synchronize()
-    {
-        Advance();
-        while (!IsAtEnd())
-        {
-            if (Previous().Is(TokenType.Endl)) return;
-
-            if (Peek().IsCommand() || Peek().Is(TokenType.Identifier))
-                return;
-
-            Advance();
-        }
-    }
 }

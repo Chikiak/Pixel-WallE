@@ -8,26 +8,8 @@ namespace PixelWallE.Core.DevUtils;
 
 public class ASTPrinter : IVisitor<string>
 {
-    private int _indentLevel = 0;
     private const int IndentSize = 4;
-
-    public string Print(ASTNode node)
-    {
-        return node.Accept(this);
-    }
-
-    private string Indent(string text)
-    {
-        return new string(' ', _indentLevel * IndentSize) + text;
-    }
-
-    private string VisitWithIndent(ASTNode node)
-    {
-        _indentLevel++;
-        var result = node.Accept(this);
-        _indentLevel--;
-        return result;
-    }
+    private int _indentLevel;
 
 
     public string VisitLiteralExpr(LiteralExpr expr)
@@ -243,5 +225,23 @@ public class ASTPrinter : IVisitor<string>
     {
         return Indent($"GoTo {stmt.Label}\n") +
                VisitWithIndent(stmt.Condition);
+    }
+
+    public string Print(ASTNode node)
+    {
+        return node.Accept(this);
+    }
+
+    private string Indent(string text)
+    {
+        return new string(' ', _indentLevel * IndentSize) + text;
+    }
+
+    private string VisitWithIndent(ASTNode node)
+    {
+        _indentLevel++;
+        var result = node.Accept(this);
+        _indentLevel--;
+        return result;
     }
 }

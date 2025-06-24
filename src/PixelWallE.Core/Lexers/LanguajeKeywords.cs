@@ -12,6 +12,7 @@ public static class LanguajeKeywords
         { "DrawLine", TokenType.DrawLine },
         { "DrawCircle", TokenType.DrawCircle },
         { "DrawRectangle", TokenType.DrawRectangle },
+        { "Filling", TokenType.Filling },
         { "Fill", TokenType.Fill },
         { "and", TokenType.And },
         { "or", TokenType.Or },

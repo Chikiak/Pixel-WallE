@@ -1,5 +1,5 @@
 using Microsoft.Win32;
-using System.Threading.Tasks;
+
 namespace PixelWallE.WPF.Services;
 
 public interface IImageService
@@ -16,10 +16,7 @@ public class ImageService : IImageService
             Filter = "Image Files|.png;.jpg;.jpeg;.bmp|All Files|.",
             Title = "Select a Background Image"
         };
-        if (dialog.ShowDialog() == true)
-        {
-            return Task.FromResult<string?>(dialog.FileName);
-        }
+        if (dialog.ShowDialog() == true) return Task.FromResult<string?>(dialog.FileName);
 
         return Task.FromResult<string?>(null);
     }

@@ -3,24 +3,24 @@
 
     <!-- Modern TextBox Style -->
     <Style x:Key="ModernTextBox" TargetType="TextBox">
-        <Setter Property="Padding" Value="8,6"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="border"
-                            Background="{TemplateBinding Background}" 
-                            BorderBrush="{TemplateBinding BorderBrush}" 
-                            BorderThickness="{TemplateBinding BorderThickness}" 
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="4">
-                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsFocused" Value="True">
-                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -30,32 +30,32 @@
 
     <!-- Modern ComboBox Style -->
     <Style x:Key="ModernComboBox" TargetType="ComboBox">
-        <Setter Property="Padding" Value="8,6"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
-                    <Border Background="{TemplateBinding Background}" 
-                            BorderBrush="{TemplateBinding BorderBrush}" 
-                            BorderThickness="{TemplateBinding BorderThickness}" 
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="4">
                         <Grid>
-                            <ToggleButton x:Name="ToggleButton" 
+                            <ToggleButton x:Name="ToggleButton"
                                           Background="Transparent" BorderThickness="0"
                                           IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}"
-                                          ClickMode="Press" Focusable="False"/>
+                                          ClickMode="Press" Focusable="False" />
                             <ContentPresenter x:Name="ContentSite" Margin="{TemplateBinding Padding}"
                                               VerticalAlignment="Center"
-                                              Content="{TemplateBinding SelectionBoxItem}"/>
+                                              Content="{TemplateBinding SelectionBoxItem}" />
                             <Popup x:Name="Popup" IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom">
-                                <Border Background="{DynamicResource ControlBackgroundBrush}" 
+                                <Border Background="{DynamicResource ControlBackgroundBrush}"
                                         BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                                         CornerRadius="4" MinWidth="{TemplateBinding ActualWidth}">
                                     <ScrollViewer>
-                                        <ItemsPresenter/>
+                                        <ItemsPresenter />
                                     </ScrollViewer>
                                 </Border>
                             </Popup>
@@ -63,7 +63,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsFocused" Value="True">
-                            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -73,32 +73,32 @@
 
     <!-- Global GroupBox Style -->
     <Style TargetType="GroupBox">
-        <Setter Property="Padding" Value="12"/>
-        <Setter Property="Margin" Value="0"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
+        <Setter Property="Padding" Value="12" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GroupBox">
-                    <Border Background="{TemplateBinding Background}" 
-                            BorderBrush="{TemplateBinding BorderBrush}" 
-                            BorderThickness="{TemplateBinding BorderThickness}" 
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="6">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
-                            <Border Grid.Row="0" Background="{DynamicResource LightBrush}" 
+                            <Border Grid.Row="0" Background="{DynamicResource LightBrush}"
                                     Padding="12,8" CornerRadius="6,6,0,0"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="0,0,0,1">
-                                <ContentPresenter ContentSource="Header" 
+                                <ContentPresenter ContentSource="Header"
                                                   TextElement.FontWeight="SemiBold"
-                                                  TextElement.Foreground="{DynamicResource TextBrush}"/>
+                                                  TextElement.Foreground="{DynamicResource TextBrush}" />
                             </Border>
-                            <ContentPresenter Grid.Row="1" Margin="{TemplateBinding Padding}"/>
+                            <ContentPresenter Grid.Row="1" Margin="{TemplateBinding Padding}" />
                         </Grid>
                     </Border>
                 </ControlTemplate>

@@ -4,17 +4,28 @@ namespace PixelWallE.Core.Tokens;
 
 public sealed class Token : IEquatable<Token>
 {
-    public TokenType Type { get; private set; }
-    public string Lexeme { get; private set; }
-    public object? Literal { get; private set; }
-    public CodeLocation Location { get; private set; }
-
     public Token(TokenType type, string lexeme, object? literal, int line, int column)
     {
         Type = type;
         Lexeme = lexeme ?? throw new ArgumentNullException(nameof(lexeme));
         Literal = literal;
         Location = new CodeLocation(line, column);
+    }
+
+    public TokenType Type { get; }
+    public string Lexeme { get; }
+    public object? Literal { get; }
+    public CodeLocation Location { get; }
+
+    public bool Equals(Token? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+
+        return Type == other.Type &&
+               Lexeme == other.Lexeme &&
+               Equals(Literal, other.Literal) &&
+               Location == other.Location;
     }
 
     public bool Is(TokenType type)
@@ -73,17 +84,6 @@ public sealed class Token : IEquatable<Token>
     {
         return
             $"TokenType: {Type}, Lexeme: '{Lexeme}', Literal: {Literal?.ToString() ?? "null"}, Line: {Location.Line}, Column: {Location.Column}";
-    }
-
-    public bool Equals(Token? other)
-    {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
-
-        return Type == other.Type &&
-               Lexeme == other.Lexeme &&
-               Equals(Literal, other.Literal) &&
-               Location == other.Location;
     }
 
     public override bool Equals(object? obj)

@@ -4,12 +4,8 @@ namespace PixelWallE.Core.Common;
 
 public class Result<T> : IResult<T>
 {
-    private readonly T _value;
     private readonly List<Error> _errors;
-
-    public bool IsSuccess => !_errors.Any();
-    public T Value => IsSuccess ? _value : throw new InvalidOperationException("Cannot access value of failed result");
-    public IReadOnlyList<Error> Errors => _errors.AsReadOnly();
+    private readonly T _value;
 
     private Result(T value)
     {
@@ -22,6 +18,10 @@ public class Result<T> : IResult<T>
         _value = default;
         _errors = errors.ToList();
     }
+
+    public bool IsSuccess => !_errors.Any();
+    public T Value => IsSuccess ? _value : throw new InvalidOperationException("Cannot access value of failed result");
+    public IReadOnlyList<Error> Errors => _errors.AsReadOnly();
 
     public static Result<T> Success(T value)
     {

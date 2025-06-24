@@ -5,9 +5,6 @@ using PixelWallE.Core.Common;
 using PixelWallE.Core.Drawing;
 using PixelWallE.Core.Parsers.AST;
 using SkiaSharp;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace PixelWallE.Core.Services;
 

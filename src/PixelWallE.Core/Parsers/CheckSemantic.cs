@@ -8,69 +8,16 @@ namespace PixelWallE.Core.Parsers;
 
 public class CheckSemantic : IVisitor<Result<Type>>
 {
-    private readonly List<Error> _errors = new();
-    private readonly Dictionary<string, Type> _symbolTable = new();
-    private readonly HashSet<string> _definedLabels = new();
-    private readonly List<(string LabelName, CodeLocation Location)> _gotoUsages = new();
     private readonly Dictionary<string, FunctionSignature> _definedFunctions = new();
-    private bool _firstStatementProcessed = false;
+    private readonly HashSet<string> _definedLabels = new();
+    private readonly List<Error> _errors = new();
+    private readonly List<(string LabelName, CodeLocation Location)> _gotoUsages = new();
+    private readonly Dictionary<string, Type> _symbolTable = new();
+    private bool _firstStatementProcessed;
 
     public CheckSemantic()
     {
         InitializeDefinedFunctions();
-    }
-
-    private void InitializeDefinedFunctions()
-    {
-        _definedFunctions.Add("GetActualX",
-            new FunctionSignature("GetActualX", typeof(IntegerOrBool), new List<Type>()));
-        _definedFunctions.Add("GetActualY",
-            new FunctionSignature("GetActualY", typeof(IntegerOrBool), new List<Type>()));
-        _definedFunctions.Add("GetCanvasSize",
-            new FunctionSignature("GetCanvasSize", typeof(IntegerOrBool), new List<Type>()));
-        _definedFunctions.Add("GetColorCount", new FunctionSignature("GetColorCount", typeof(IntegerOrBool),
-            new List<Type>
-            {
-                typeof(string), typeof(IntegerOrBool), typeof(IntegerOrBool), typeof(IntegerOrBool),
-                typeof(IntegerOrBool)
-            }));
-        _definedFunctions.Add("IsBrushColor", new FunctionSignature("IsBrushColor", typeof(IntegerOrBool),
-            new List<Type> { typeof(string) }));
-        _definedFunctions.Add("IsBrushSize", new FunctionSignature("IsBrushSize", typeof(IntegerOrBool),
-            new List<Type> { typeof(IntegerOrBool) }));
-        _definedFunctions.Add("IsCanvasColor", new FunctionSignature("IsCanvasColor", typeof(IntegerOrBool),
-            new List<Type> { typeof(string), typeof(IntegerOrBool), typeof(IntegerOrBool) }));
-    }
-
-    public Result<object> Analize(ProgramStmt program)
-    {
-        _errors.Clear();
-        _symbolTable.Clear();
-        _definedLabels.Clear();
-        _gotoUsages.Clear();
-        _firstStatementProcessed = false;
-
-        program.Accept(this);
-
-        if (program.Statements.Count > 0)
-        {
-            var firstEffectiveStmt = program.Statements[0];
-            if (firstEffectiveStmt is not SpawnStmt)
-                _errors.Add(new SemanticError(firstEffectiveStmt.Location, "Program must start with a Spawn command."));
-        }
-        else if (program.Statements.Count == 0 && program.Location != null) // Programa vacío
-        {
-            _errors.Add(new SemanticError(program.Location,
-                "Program cannot be empty and must start with a Spawn command."));
-        }
-
-        foreach (var usage in _gotoUsages)
-            if (!_definedLabels.Contains(usage.LabelName))
-                _errors.Add(new SemanticError(usage.Location,
-                    $"Label '{usage.LabelName}' referenced in GoTo statement is not defined."));
-
-        if (_errors.Any()) return Result<object>.Failure(_errors);
-        return Result<object>.Success(new object());
     }
 
     public Result<Type> VisitLiteralExpr(LiteralExpr expr)
@@ -86,21 +33,6 @@ public class CheckSemantic : IVisitor<Result<Type>>
     public Result<Type> VisitMinusExpr(MinusExpr expr)
     {
         return CheckUnaryExp(expr, typeof(IntegerOrBool));
-    }
-
-    private Result<Type> CheckUnaryExp(UnaryExpr expr, Type type)
-    {
-        var rightResult = expr.Right.Accept(this);
-        if (!rightResult.IsSuccess) return Result<Type>.Failure(rightResult.Errors);
-        if (rightResult.Value != type)
-        {
-            var error = new SemanticError(expr.Location,
-                $"This unary operator can only be applied to {type} expressions.");
-            _errors.Add(error);
-            return Result<Type>.Failure(error);
-        }
-
-        return Result<Type>.Success(type);
     }
 
     public Result<Type> VisitAddExpr(AddExpr expr)
@@ -183,29 +115,6 @@ public class CheckSemantic : IVisitor<Result<Type>>
         return CheckArithmeticExpr(expr, "%");
     }
 
-    private Result<Type> CheckArithmeticExpr(BinaryExpr expr, string operatorName)
-    {
-        var leftResult = expr.Left.Accept(this);
-        var rightResult = expr.Right.Accept(this);
-
-        var currentErrors = new List<Error>();
-        if (!leftResult.IsSuccess) currentErrors.AddRange(leftResult.Errors);
-        if (!rightResult.IsSuccess) currentErrors.AddRange(rightResult.Errors);
-
-        if (currentErrors.Any()) return Result<Type>.Failure(currentErrors);
-
-        if (leftResult.Value != typeof(IntegerOrBool) || rightResult.Value != typeof(IntegerOrBool))
-        {
-            var error = new SemanticError(expr.Location,
-                $"Operator '{operatorName}' can only be applied to integer operands. Found '{leftResult.Value.Name}' and '{rightResult.Value.Name}'.");
-            _errors.Add(error);
-            currentErrors.Add(error); // Añadir también a currentErrors para el return
-            return Result<Type>.Failure(currentErrors);
-        }
-
-        return Result<Type>.Success(typeof(IntegerOrBool));
-    }
-
     public Result<Type> VisitEqualEqualExpr(EqualEqualExpr expr)
     {
         return CheckComparisonExpr(expr, "==");
@@ -236,35 +145,6 @@ public class CheckSemantic : IVisitor<Result<Type>>
         return CheckComparisonExpr(expr, "<=");
     }
 
-    private Result<Type> CheckComparisonExpr(BinaryExpr expr, string operatorName)
-    {
-        var leftResult = expr.Left.Accept(this);
-        var rightResult = expr.Right.Accept(this);
-
-        var currentErrors = new List<Error>();
-        if (!leftResult.IsSuccess) currentErrors.AddRange(leftResult.Errors);
-        if (!rightResult.IsSuccess) currentErrors.AddRange(rightResult.Errors);
-
-        if (currentErrors.Any()) return Result<Type>.Failure(currentErrors);
-
-        var typesCompatible = false;
-        if ((expr is EqualEqualExpr || expr is BangEqualExpr) && leftResult.Value == rightResult.Value)
-            typesCompatible = true;
-        else if (leftResult.Value == typeof(IntegerOrBool) && rightResult.Value == typeof(IntegerOrBool))
-            typesCompatible = true;
-
-        if (!typesCompatible)
-        {
-            var error = new SemanticError(expr.Location,
-                $"Cannot apply operator '{operatorName}' to operands of type '{leftResult.Value.Name}' and '{rightResult.Value.Name}'.");
-            _errors.Add(error);
-            currentErrors.Add(error);
-            return Result<Type>.Failure(currentErrors);
-        }
-
-        return Result<Type>.Success(typeof(IntegerOrBool));
-    }
-
     public Result<Type> VisitAndExpr(AndExpr expr)
     {
         return CheckLogicalExpr(expr, "and");
@@ -273,29 +153,6 @@ public class CheckSemantic : IVisitor<Result<Type>>
     public Result<Type> VisitOrExpr(OrExpr expr)
     {
         return CheckLogicalExpr(expr, "or");
-    }
-
-    private Result<Type> CheckLogicalExpr(BinaryExpr expr, string operatorName)
-    {
-        var leftResult = expr.Left.Accept(this);
-        var rightResult = expr.Right.Accept(this);
-
-        var currentErrors = new List<Error>();
-        if (!leftResult.IsSuccess) currentErrors.AddRange(leftResult.Errors);
-        if (!rightResult.IsSuccess) currentErrors.AddRange(rightResult.Errors);
-
-        if (currentErrors.Any()) return Result<Type>.Failure(currentErrors);
-
-        if (leftResult.Value != typeof(IntegerOrBool) || rightResult.Value != typeof(IntegerOrBool))
-        {
-            var error = new SemanticError(expr.Location,
-                $"Operator '{operatorName}' can only be applied to boolean operands");
-            _errors.Add(error);
-            currentErrors.Add(error);
-            return Result<Type>.Failure(currentErrors);
-        }
-
-        return Result<Type>.Success(typeof(IntegerOrBool));
     }
 
     public Result<Type> VisitGroupExpr(GroupExpr expr)
@@ -370,16 +227,6 @@ public class CheckSemantic : IVisitor<Result<Type>>
         return Result<Type>.Success(typeof(void));
     }
 
-    private void CheckCommandArg(Expr argExpr, Type expectedType, string commandName, string argName,
-        CodeLocation errorLocation)
-    {
-        var argResult = argExpr.Accept(this);
-        if (!argResult.IsSuccess) return;
-        if (argResult.Value == expectedType) return;
-        _errors.Add(new SemanticError(errorLocation,
-                $"Argument '{argName}' for command '{commandName}' expects type '{expectedType.Name}', but got '{argResult.Value.Name}'."));
-    }
-
     public Result<Type> VisitSpawnStmt(SpawnStmt stmt)
     {
         if (!_firstStatementProcessed)
@@ -406,12 +253,6 @@ public class CheckSemantic : IVisitor<Result<Type>>
     {
         CheckCommandArg(stmt.SizeExpr, typeof(IntegerOrBool), "Size", "size", stmt.SizeExpr.Location);
         return Result<Type>.Success(typeof(void));
-    }
-
-    private void CheckDirRange(Expr argExpr, string name)
-    {
-        if (argExpr is LiteralExpr lit && lit.Value.Value is IntegerOrBool value && (value < -1 || value > 1))
-            _errors.Add(new SemanticError(lit.Location, $"Argument '{name}' for DrawLine must be -1, 0, or 1."));
     }
 
     public Result<Type> VisitDrawLineStmt(DrawLineStmt stmt)
@@ -487,5 +328,164 @@ public class CheckSemantic : IVisitor<Result<Type>>
                     "Condition for GoTo statement must be a boolean expression."));
 
         return Result<Type>.Success(typeof(void));
+    }
+
+    private void InitializeDefinedFunctions()
+    {
+        _definedFunctions.Add("GetActualX",
+            new FunctionSignature("GetActualX", typeof(IntegerOrBool), new List<Type>()));
+        _definedFunctions.Add("GetActualY",
+            new FunctionSignature("GetActualY", typeof(IntegerOrBool), new List<Type>()));
+        _definedFunctions.Add("GetCanvasSize",
+            new FunctionSignature("GetCanvasSize", typeof(IntegerOrBool), new List<Type>()));
+        _definedFunctions.Add("GetColorCount", new FunctionSignature("GetColorCount", typeof(IntegerOrBool),
+            new List<Type>
+            {
+                typeof(string), typeof(IntegerOrBool), typeof(IntegerOrBool), typeof(IntegerOrBool),
+                typeof(IntegerOrBool)
+            }));
+        _definedFunctions.Add("IsBrushColor", new FunctionSignature("IsBrushColor", typeof(IntegerOrBool),
+            new List<Type> { typeof(string) }));
+        _definedFunctions.Add("IsBrushSize", new FunctionSignature("IsBrushSize", typeof(IntegerOrBool),
+            new List<Type> { typeof(IntegerOrBool) }));
+        _definedFunctions.Add("IsCanvasColor", new FunctionSignature("IsCanvasColor", typeof(IntegerOrBool),
+            new List<Type> { typeof(string), typeof(IntegerOrBool), typeof(IntegerOrBool) }));
+    }
+
+    public Result<object> Analize(ProgramStmt program)
+    {
+        _errors.Clear();
+        _symbolTable.Clear();
+        _definedLabels.Clear();
+        _gotoUsages.Clear();
+        _firstStatementProcessed = false;
+
+        program.Accept(this);
+
+        if (program.Statements.Count > 0)
+        {
+            var firstEffectiveStmt = program.Statements[0];
+            if (firstEffectiveStmt is not SpawnStmt)
+                _errors.Add(new SemanticError(firstEffectiveStmt.Location, "Program must start with a Spawn command."));
+        }
+        else if (program.Statements.Count == 0 && program.Location != null) // Programa vacío
+        {
+            _errors.Add(new SemanticError(program.Location,
+                "Program cannot be empty and must start with a Spawn command."));
+        }
+
+        foreach (var usage in _gotoUsages)
+            if (!_definedLabels.Contains(usage.LabelName))
+                _errors.Add(new SemanticError(usage.Location,
+                    $"Label '{usage.LabelName}' referenced in GoTo statement is not defined."));
+
+        if (_errors.Any()) return Result<object>.Failure(_errors);
+        return Result<object>.Success(new object());
+    }
+
+    private Result<Type> CheckUnaryExp(UnaryExpr expr, Type type)
+    {
+        var rightResult = expr.Right.Accept(this);
+        if (!rightResult.IsSuccess) return Result<Type>.Failure(rightResult.Errors);
+        if (rightResult.Value != type)
+        {
+            var error = new SemanticError(expr.Location,
+                $"This unary operator can only be applied to {type} expressions.");
+            _errors.Add(error);
+            return Result<Type>.Failure(error);
+        }
+
+        return Result<Type>.Success(type);
+    }
+
+    private Result<Type> CheckArithmeticExpr(BinaryExpr expr, string operatorName)
+    {
+        var leftResult = expr.Left.Accept(this);
+        var rightResult = expr.Right.Accept(this);
+
+        var currentErrors = new List<Error>();
+        if (!leftResult.IsSuccess) currentErrors.AddRange(leftResult.Errors);
+        if (!rightResult.IsSuccess) currentErrors.AddRange(rightResult.Errors);
+
+        if (currentErrors.Any()) return Result<Type>.Failure(currentErrors);
+
+        if (leftResult.Value != typeof(IntegerOrBool) || rightResult.Value != typeof(IntegerOrBool))
+        {
+            var error = new SemanticError(expr.Location,
+                $"Operator '{operatorName}' can only be applied to integer operands. Found '{leftResult.Value.Name}' and '{rightResult.Value.Name}'.");
+            _errors.Add(error);
+            currentErrors.Add(error); // Añadir también a currentErrors para el return
+            return Result<Type>.Failure(currentErrors);
+        }
+
+        return Result<Type>.Success(typeof(IntegerOrBool));
+    }
+
+    private Result<Type> CheckComparisonExpr(BinaryExpr expr, string operatorName)
+    {
+        var leftResult = expr.Left.Accept(this);
+        var rightResult = expr.Right.Accept(this);
+
+        var currentErrors = new List<Error>();
+        if (!leftResult.IsSuccess) currentErrors.AddRange(leftResult.Errors);
+        if (!rightResult.IsSuccess) currentErrors.AddRange(rightResult.Errors);
+
+        if (currentErrors.Any()) return Result<Type>.Failure(currentErrors);
+
+        var typesCompatible = false;
+        if ((expr is EqualEqualExpr || expr is BangEqualExpr) && leftResult.Value == rightResult.Value)
+            typesCompatible = true;
+        else if (leftResult.Value == typeof(IntegerOrBool) && rightResult.Value == typeof(IntegerOrBool))
+            typesCompatible = true;
+
+        if (!typesCompatible)
+        {
+            var error = new SemanticError(expr.Location,
+                $"Cannot apply operator '{operatorName}' to operands of type '{leftResult.Value.Name}' and '{rightResult.Value.Name}'.");
+            _errors.Add(error);
+            currentErrors.Add(error);
+            return Result<Type>.Failure(currentErrors);
+        }
+
+        return Result<Type>.Success(typeof(IntegerOrBool));
+    }
+
+    private Result<Type> CheckLogicalExpr(BinaryExpr expr, string operatorName)
+    {
+        var leftResult = expr.Left.Accept(this);
+        var rightResult = expr.Right.Accept(this);
+
+        var currentErrors = new List<Error>();
+        if (!leftResult.IsSuccess) currentErrors.AddRange(leftResult.Errors);
+        if (!rightResult.IsSuccess) currentErrors.AddRange(rightResult.Errors);
+
+        if (currentErrors.Any()) return Result<Type>.Failure(currentErrors);
+
+        if (leftResult.Value != typeof(IntegerOrBool) || rightResult.Value != typeof(IntegerOrBool))
+        {
+            var error = new SemanticError(expr.Location,
+                $"Operator '{operatorName}' can only be applied to boolean operands");
+            _errors.Add(error);
+            currentErrors.Add(error);
+            return Result<Type>.Failure(currentErrors);
+        }
+
+        return Result<Type>.Success(typeof(IntegerOrBool));
+    }
+
+    private void CheckCommandArg(Expr argExpr, Type expectedType, string commandName, string argName,
+        CodeLocation errorLocation)
+    {
+        var argResult = argExpr.Accept(this);
+        if (!argResult.IsSuccess) return;
+        if (argResult.Value == expectedType) return;
+        _errors.Add(new SemanticError(errorLocation,
+            $"Argument '{argName}' for command '{commandName}' expects type '{expectedType.Name}', but got '{argResult.Value.Name}'."));
+    }
+
+    private void CheckDirRange(Expr argExpr, string name)
+    {
+        if (argExpr is LiteralExpr lit && lit.Value.Value is IntegerOrBool value && (value < -1 || value > 1))
+            _errors.Add(new SemanticError(lit.Location, $"Argument '{name}' for DrawLine must be -1, 0, or 1."));
     }
 }

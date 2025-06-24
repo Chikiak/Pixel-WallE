@@ -7,15 +7,3 @@ public abstract class BinaryExpr(Expr left, Expr right, CodeLocation location) :
     public Expr Left { get; private set; } = left;
     public Expr Right { get; private set; } = right;
 }
-
-#region Arithmetic
-
-#endregion
-
-#region Comparison
-
-#endregion
-
-#region Logical
-
-#endregion

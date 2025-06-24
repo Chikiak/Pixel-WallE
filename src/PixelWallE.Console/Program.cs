@@ -1,23 +1,17 @@
-﻿using PixelWallE.Core.Drawing;
+﻿using PixelWallE.Core.Common;
+using PixelWallE.Core.Drawing;
 using PixelWallE.Core.Errors;
-using PixelWallE.Core.Parsers.AST;
 using PixelWallE.Core.Services;
 using SkiaSharp;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using PixelWallE.Core.Common;
 
 namespace ConsoleWall_e;
 
-static class Program
+internal static class Program
 {
-    static List<Error> Errors = new List<Error>();
+    private static readonly List<Error> Errors = new();
 
     // Main sigue siendo asíncrono
-    static async Task Main(string[] args)
+    private static async Task Main(string[] args)
     {
         Errors.Clear();
         if (args.Length != 1)
@@ -25,16 +19,14 @@ static class Program
             Console.WriteLine("Uso: ConsoleWall-e.exe <ruta_del_archivo>");
             return;
         }
-        string filePath = args[0];
+
+        var filePath = args[0];
         await RunFileAsync(filePath);
 
         if (Errors.Count > 0)
         {
             Console.WriteLine("\n--- Errors ---");
-            foreach (var error in Errors)
-            {
-                Console.WriteLine(error.ToString());
-            }
+            foreach (var error in Errors) Console.WriteLine(error.ToString());
         }
     }
 
@@ -47,12 +39,14 @@ static class Program
                 Errors.Add(new ImportError($"El archivo '{filePath}' no existe."));
                 return;
             }
+
             if (!filePath.EndsWith(".pw"))
             {
                 Errors.Add(new ImportError($"El archivo '{filePath}' no es compatible, debe ser .pw"));
                 return;
             }
-            string fileContent = await File.ReadAllTextAsync(filePath);
+
+            var fileContent = await File.ReadAllTextAsync(filePath);
             await RunAsync(fileContent);
         }
         catch (Exception ex)
@@ -88,10 +82,7 @@ static class Program
         {
             // Para una app de consola, solo nos interesan los estados finales.
             // Opcional: mostrar actividad para los pasos intermedios.
-            if (update.Type == DrawingUpdateType.Step)
-            {
-                Console.Write(".");
-            }
+            if (update.Type == DrawingUpdateType.Step) Console.Write(".");
 
             // Cuando la ejecución termina (ya sea por completarse o por un error),
             // capturamos el resultado y señalamos al TaskCompletionSource.
@@ -99,17 +90,13 @@ static class Program
             {
                 Console.WriteLine(); // Salto de línea después de los puntos de progreso.
                 finalBitmap = update.Bitmap?.Copy();
-                if (update.Errors != null)
-                {
-                    Errors.AddRange(update.Errors);
-                }
+                if (update.Errors != null) Errors.AddRange(update.Errors);
 
                 // Si el update es de error y trae un mensaje, lo añadimos como error genérico.
                 // Útil para errores como el límite de ejecución.
-                if (update.Type == DrawingUpdateType.Error && !string.IsNullOrEmpty(update.Message) && (update.Errors == null || !update.Errors.Any()))
-                {
-                    Errors.Add(new RuntimeError(new PixelWallE.Core.Common.CodeLocation(0, 0), update.Message));
-                }
+                if (update.Type == DrawingUpdateType.Error && !string.IsNullOrEmpty(update.Message) &&
+                    (update.Errors == null || !update.Errors.Any()))
+                    Errors.Add(new RuntimeError(new CodeLocation(0, 0), update.Message));
 
                 tcs.TrySetResult(true);
             }
@@ -119,12 +106,12 @@ static class Program
         // el delay (0) y el modo de ejecución (Instant).
         await executionService.ExecuteAsync(
             programAst,
-            null,                   // Sin bitmap inicial
-            64,                     // Ancho por defecto
-            64,                     // Alto por defecto
+            null, // Sin bitmap inicial
+            64, // Ancho por defecto
+            64, // Alto por defecto
             progressHandler,
-            0,                      // executionDelay: 0 para la consola
-            ExecutionMode.Instant,  // executionMode: Instant para la consola
+            0, // executionDelay: 0 para la consola
+            ExecutionMode.Instant, // executionMode: Instant para la consola
             CancellationToken.None);
 
         // Esperamos a que el progress handler nos avise que la ejecución ha terminado.
@@ -135,7 +122,7 @@ static class Program
         // El guardado de la imagen permanece igual.
         if (finalBitmap != null)
         {
-            string outputPath = "E:\\Proyectos\\PixelWallE\\src\\PixelWallE.Console\\CodigoPrueba\\output.png";
+            var outputPath = "E:\\Proyectos\\PixelWallE\\src\\PixelWallE.Console\\CodigoPrueba\\output.png";
             try
             {
                 using var image = SKImage.FromBitmap(finalBitmap);

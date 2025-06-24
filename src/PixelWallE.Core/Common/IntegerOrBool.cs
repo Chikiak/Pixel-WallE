@@ -2,8 +2,6 @@
 
 public class IntegerOrBool
 {
-    public object Value { get; private set; }
-
     public IntegerOrBool(int value)
     {
         Value = value;
@@ -13,6 +11,8 @@ public class IntegerOrBool
     {
         Value = value;
     }
+
+    public object Value { get; }
 
     public static implicit operator int(IntegerOrBool value)
     {

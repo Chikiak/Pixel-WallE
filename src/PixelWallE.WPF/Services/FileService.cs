@@ -1,7 +1,5 @@
-using System.Threading.Tasks;
-using Microsoft.Win32;
-using System;
 using System.IO;
+using Microsoft.Win32;
 
 namespace PixelWallE.WPF.Services;
 
@@ -13,6 +11,7 @@ public interface IFileService
     Task<bool> SaveFileAsync(string filePath, string content);
     Task<FileOperationResult> SaveFileAsAsync(string content);
 }
+
 public class FileService : IFileService
 {
     private const string FileFilter = "PixelWallE Files (*.pw)|*.pw|All files (*.*)|*.*";
@@ -26,7 +25,6 @@ public class FileService : IFileService
         };
 
         if (dialog.ShowDialog() == true)
-        {
             try
             {
                 var content = await File.ReadAllTextAsync(dialog.FileName);
@@ -36,7 +34,7 @@ public class FileService : IFileService
             {
                 return new FileOperationResult(false, dialog.FileName, ex.Message);
             }
-        }
+
         return new FileOperationResult(false, null, null);
     }
 
@@ -66,6 +64,7 @@ public class FileService : IFileService
             var success = await SaveFileAsync(dialog.FileName, content);
             return new FileOperationResult(success, dialog.FileName, content);
         }
+
         return new FileOperationResult(false, null, null);
     }
 }

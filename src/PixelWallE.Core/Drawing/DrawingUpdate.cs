@@ -1,6 +1,5 @@
 using PixelWallE.Core.Errors;
 using SkiaSharp;
-using System.Collections.Generic;
 
 namespace PixelWallE.Core.Drawing;
 

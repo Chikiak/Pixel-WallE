@@ -94,14 +94,15 @@ public readonly struct WallEColor(byte red, byte green, byte blue, byte alpha = 
 
         return false;
     }
-    
-    
+
+
     public override string ToString()
     {
         if (Alpha == 255)
             return $"#{Red:X2}{Green:X2}{Blue:X2}";
         return $"#{Alpha:X2}{Red:X2}{Green:X2}{Blue:X2}";
     }
+
     public override bool Equals(object? obj)
     {
         return obj is WallEColor other &&
@@ -110,14 +111,17 @@ public readonly struct WallEColor(byte red, byte green, byte blue, byte alpha = 
                Blue == other.Blue &&
                Alpha == other.Alpha;
     }
+
     public override int GetHashCode()
     {
         return HashCode.Combine(Red, Green, Blue, Alpha);
     }
+
     public static bool operator ==(WallEColor left, WallEColor right)
     {
         return left.Equals(right);
     }
+
     public static bool operator !=(WallEColor left, WallEColor right)
     {
         return !(left == right);

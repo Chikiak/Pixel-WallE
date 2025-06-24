@@ -7,18 +7,15 @@ namespace PixelWallE.Core.Lexers;
 
 public class Lexer : ILexer
 {
+    private readonly List<Error> _errors;
     private readonly string _source;
     private readonly List<Token> _tokens;
-    private readonly List<Error> _errors;
-    
-    private int _start = 0;
-    private int _current = 0;
-    private int _line = 1;
     private int _column = 1; // Columna actual en la línea
-    private int _startColumn = 1; // Columna donde inicia el token actual
+    private int _current;
+    private int _line = 1;
 
-    private CodeLocation CurrentLocation => new(_line, _column);
-    private CodeLocation TokenLocation => new(_line, _startColumn);
+    private int _start;
+    private int _startColumn = 1; // Columna donde inicia el token actual
 
     public Lexer(string source)
     {
@@ -28,6 +25,9 @@ public class Lexer : ILexer
         _line = 1;
         _column = 1;
     }
+
+    private CodeLocation CurrentLocation => new(_line, _column);
+    private CodeLocation TokenLocation => new(_line, _startColumn);
 
     public Result<IReadOnlyList<Token>> ScanTokens()
     {
@@ -61,7 +61,7 @@ public class Lexer : ILexer
 
     private void ScanToken()
     {
-        char c = Advance();
+        var c = Advance();
         switch (c)
         {
             case '#':
@@ -80,7 +80,7 @@ public class Lexer : ILexer
             case '+': AddToken(TokenType.Plus); break;
             case '/': AddToken(TokenType.Slash); break;
             case '%': AddToken(TokenType.Modulo); break;
-            case '*': 
+            case '*':
                 AddToken(Match('*') ? TokenType.Power : TokenType.Star);
                 break;
             case '!':
@@ -90,7 +90,8 @@ public class Lexer : ILexer
                 AddToken(Match('=') ? TokenType.EqualEqual : TokenType.Equal);
                 break;
             case '>':
-                AddToken(Match('=') ? TokenType.GreaterEqual : TokenType.Greater);;
+                AddToken(Match('=') ? TokenType.GreaterEqual : TokenType.Greater);
+                ;
                 break;
             case '<':
                 ScanLessOrAssign();
@@ -111,17 +112,11 @@ public class Lexer : ILexer
                 break;
             default:
                 if (IsDigit(c))
-                {
                     ScanNumber();
-                }
                 else if (IsAlpha(c))
-                {
                     ScanIdentifier();
-                }
                 else
-                {
                     AddError($"Unexpected character: {c}");
-                }
                 break;
         }
     }
@@ -161,6 +156,7 @@ public class Lexer : ILexer
             AddToken(type, value);
             return;
         }
+
         AddToken(type);
     }
 
@@ -173,8 +169,8 @@ public class Lexer : ILexer
     private void ScanNumber()
     {
         while (IsDigit(Peek())) Advance();
-        string numberString = _source.Substring(_start, _current - _start);
-        if (int.TryParse(numberString, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
+        var numberString = _source.Substring(_start, _current - _start);
+        if (int.TryParse(numberString, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
         {
             IntegerOrBool bvalue = value;
             AddToken(TokenType.Number, bvalue);
@@ -184,6 +180,7 @@ public class Lexer : ILexer
             AddError($"Número inválido: {numberString}");
         }
     }
+
     private void ScanString()
     {
         while (Peek() != '"' && !IsAtEnd())
@@ -194,18 +191,19 @@ public class Lexer : ILexer
                 _line++;
                 _column = 1;
             }
+
             Advance();
         }
 
         if (IsAtEnd())
         {
-            AddError($"Unfinished string");
+            AddError("Unfinished string");
             return;
         }
 
         Advance(); // Consumir el " de cierre.
 
-        string value = _source.Substring(_start + 1, _current - _start - 2);
+        var value = _source.Substring(_start + 1, _current - _start - 2);
         AddToken(TokenType.String, value);
     }
 
@@ -214,11 +212,13 @@ public class Lexer : ILexer
         _line++;
         _column = 1;
     }
+
     private char Peek()
     {
         if (IsAtEnd()) return '\0';
         return _source[_current];
     }
+
     private bool Match(char expected)
     {
         if (IsAtEnd()) return false;
@@ -227,29 +227,35 @@ public class Lexer : ILexer
         _column++;
         return true;
     }
+
     private char Advance()
     {
         _column++;
         return _source[_current++];
     }
+
     private void AddToken(TokenType type, object? literal = null)
     {
-        string text = _source.Substring(_start, _current - _start);
+        var text = _source.Substring(_start, _current - _start);
         _tokens.Add(new Token(type, text, literal, _line, _startColumn));
     }
+
     private bool IsAlpha(char c)
     {
         return (c >= 'a' && c <= 'z') ||
                (c >= 'A' && c <= 'Z');
     }
+
     private bool IsAlphaNumericOrDash(char c)
     {
         return IsAlpha(c) || IsDigit(c) || c == '_';
     }
+
     private bool IsDigit(char c)
     {
         return c >= '0' && c <= '9';
     }
+
     private bool IsAtEnd()
     {
         return _current >= _source.Length;
